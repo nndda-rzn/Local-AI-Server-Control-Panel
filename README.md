@@ -11,17 +11,22 @@
 <p>
   <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel/stargazers"><img src="https://img.shields.io/github/stars/nndda-rzn/Local-AI-Server-Control-Panel?style=for-the-badge&logo=github&color=0E9F6E&labelColor=0F172A" alt="Stars" /></a>
   <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel/network/members"><img src="https://img.shields.io/github/forks/nndda-rzn/Local-AI-Server-Control-Panel?style=for-the-badge&logo=github&color=16A34A&labelColor=0F172A" alt="Forks" /></a>
+  <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel/watchers"><img src="https://img.shields.io/github/watchers/nndda-rzn/Local-AI-Server-Control-Panel?style=for-the-badge&logo=github&color=8B5CF6&labelColor=0F172A" alt="Watchers" /></a>
   <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel/issues"><img src="https://img.shields.io/github/issues/nndda-rzn/Local-AI-Server-Control-Panel?style=for-the-badge&logo=github&color=F59E0B&labelColor=0F172A" alt="Issues" /></a>
+  <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel/pulls"><img src="https://img.shields.io/github/issues-pr/nndda-rzn/Local-AI-Server-Control-Panel?style=for-the-badge&logo=github&color=EC4899&labelColor=0F172A" alt="Pull Requests" /></a>
   <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel/commits/main"><img src="https://img.shields.io/github/last-commit/nndda-rzn/Local-AI-Server-Control-Panel?style=for-the-badge&logo=git&color=0EA5E9&labelColor=0F172A" alt="Last Commit" /></a>
 </p>
 
 <p>
-  <img src="https://img.shields.io/badge/version-2.0.0-0E9F6E?style=flat-square&labelColor=0F172A" alt="Version" />
-  <img src="https://img.shields.io/badge/license-Private-64748B?style=flat-square&labelColor=0F172A" alt="License" />
-  <img src="https://img.shields.io/badge/status-MVP%20%2B%20V1.2-16A34A?style=flat-square&labelColor=0F172A" alt="Status" />
-  <img src="https://img.shields.io/badge/PRD-v2.0%20✓-0EA5E9?style=flat-square&labelColor=0F172A" alt="PRD" />
-  <img src="https://img.shields.io/github/repo-size/nndda-rzn/Local-AI-Server-Control-Panel?style=flat-square&labelColor=0F172A&color=8B5CF6" alt="Repo Size" />
-  <img src="https://img.shields.io/github/languages/code-size/nndda-rzn/Local-AI-Server-Control-Panel?style=flat-square&labelColor=0F172A&color=EC4899" alt="Code Size" />
+  <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel/releases"><img src="https://img.shields.io/github/v/release/nndda-rzn/Local-AI-Server-Control-Panel?include_prereleases&display_name=tag&style=flat-square&labelColor=0F172A&color=0E9F6E&label=release" alt="Release" /></a>
+  <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel/blob/main/README.md"><img src="https://img.shields.io/badge/license-Private-64748B?style=flat-square&labelColor=0F172A" alt="License" /></a>
+  <a href="#roadmap"><img src="https://img.shields.io/badge/status-MVP%20%2B%20V1.2-16A34A?style=flat-square&labelColor=0F172A" alt="Status" /></a>
+  <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel/blob/main/PRD_extracted.txt"><img src="https://img.shields.io/badge/PRD-v2.0%20✓-0EA5E9?style=flat-square&labelColor=0F172A" alt="PRD" /></a>
+  <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel"><img src="https://img.shields.io/github/repo-size/nndda-rzn/Local-AI-Server-Control-Panel?style=flat-square&labelColor=0F172A&color=8B5CF6" alt="Repo Size" /></a>
+  <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel"><img src="https://img.shields.io/github/languages/code-size/nndda-rzn/Local-AI-Server-Control-Panel?style=flat-square&labelColor=0F172A&color=EC4899" alt="Code Size" /></a>
+  <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel"><img src="https://img.shields.io/github/languages/top/nndda-rzn/Local-AI-Server-Control-Panel?style=flat-square&labelColor=0F172A&color=F7DF1E" alt="Top Language" /></a>
+  <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel/graphs/contributors"><img src="https://img.shields.io/github/contributors/nndda-rzn/Local-AI-Server-Control-Panel?style=flat-square&labelColor=0F172A&color=14B8A6" alt="Contributors" /></a>
+  <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel/pulse"><img src="https://img.shields.io/github/commit-activity/m/nndda-rzn/Local-AI-Server-Control-Panel?style=flat-square&labelColor=0F172A&color=0EA5E9&label=commits%2Fmonth" alt="Commit Activity" /></a>
 </p>
 
 <h4>Platform &amp; Infrastructure</h4>
