@@ -1,0 +1,33 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: panel-backend
+    env_file:
+      - .env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /server/apps:/server/apps
+      - /server/data:/server/data
+      - /server/backup:/server/backup
+    expose:
+      - "5500"
+    restart: unless-stopped
+    networks:
+      - panel-net
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: panel-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    networks:
+      - panel-net
+
+networks:
+  panel-net:
+    driver: bridge

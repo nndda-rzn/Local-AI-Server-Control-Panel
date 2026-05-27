@@ -1,0 +1,679 @@
+=== PAGE 1 ===
+PRODUCT REQUIREMENTS DOCUMENT
+Local AI Server Control Panel
+Dokumen kebutuhan produk untuk web admin panel mandiri yang mengelola
+server lokal berbasis Ubuntu Server, VMware, Docker, Cloudflare Tunnel, web
+app, backend API, dan AI inference service.
+NAMA PRODUK
+Local AI Server Control Panel
+VERSI DOKUMEN
+v1.0
+TARGET PLATFORM
+Ubuntu Server VM + Docker
+TANGGAL
+27 Mei 2026
+TARGET PENGGUNA
+Owner/Admin server pribadi
+STATUS
+Draft implementasi awal
+Dokumen ini dirancang untuk project server pribadi yang saat ini sudah memiliki Ubuntu Server di VMware, Docker, Docker Compose, SSH,
+folder server, dan service Nginx test pada port 8080. 
+
+=== PAGE 2 ===
+Daftar Isi
+1. Ringkasan Eksekutif
+2. Konteks Server Saat Ini
+3. Problem Statement
+4. Goals dan Non-Goals
+5. Stakeholder dan Persona
+6. Ruang Lingkup Produk
+7 . User Flow Utama
+8. Functional Requirements
+9. Non-Functional Requirements
+10. Arsitektur Sistem
+11. Modul Produk
+12. Data Model
+13. API Contract
+14. Security Requirement
+15. Deployment Design
+16. AI Model Management
+17 . UI/UX Requirement
+18. Observability
+19. Acceptance Criteria
+20. Milestone Implementasi
+21. Risiko dan Mitigasi
+22. Appendix
+1. Ringkasan Eksekutif
+Local AI Server Control Panel adalah aplikasi web admin yang digunakan untuk mengelola server lokal pribadi melalui browser.
+Produk ini memungkinkan admin melihat status server, mengelola container Docker, membaca log, melakukan restart service,
+mengatur deployment project, mengelola konfigurasi AI inference, serta menghubungkan service lokal ke internet melalui
+Cloudflare Tunnel.
+Produk ini tidak bertujuan menggantikan platform seperti Portainer atau Coolify secara penuh pada versi awal. Fokus utamanya
+adalah membuat panel yang sesuai dengan kebutuhan personal: deployment web, backend, database, dan model AI ringan seperti
+YOLOv8/ONNX/PyTorch inference untuk demo, pengembangan, dan validasi sistem.
+Target MVP: admin dapat login, melihat status server, melihat container, start/stop/restart container, membaca log container,
+deploy project dari folder /server/apps, dan mengatur konfigurasi model AI dasar.
+2. Konteks Server Saat Ini
+Server dasar sudah dibangun sebagai server lokal berbasis virtual machine. Host menggunakan laptop lama dengan VMware
+Workstation Pro, guest OS menggunakan Ubuntu Server, jaringan menggunakan NAT/VMnet8, Docker sudah menjadi runtime
+deployment, dan Nginx container digunakan sebagai test service pada port 8080.
+Komponen Status/Keterangan
+Host Laptop lama/Windows dengan VMware Workstation Pro.
+Guest OS Ubuntu Server tanpa desktop environment.
+Network NAT/VMnet8 dengan adapter Ubuntu ens33.
+Remote Access SSH dari Windows ke IP server.
+Container Runtime Docker dan Docker Compose.
+Service Test Nginx container, mapping 8080:80.
+Struktur Folder /server/apps, /server/data, /server/backup.
+Online Access Direncanakan melalui Cloudflare Tunnel.
+
+=== PAGE 3 ===
+Laptop/Windows
+  -> VMware Workstation Pro
+    -> Ubuntu Server VM
+      -> Docker Engine
+        -> Nginx / Web App / API / AI Inference
+          -> Cloudflare Tunnel untuk akses publik
+3. Problem Statement
+Pengelolaan server lokal melalui terminal cukup fleksibel, tetapi tidak ideal ketika jumlah service bertambah. Admin harus
+mengingat command Docker, path project, konfigurasi environment, port mapping, dan log masing-masing service. Untuk project
+web + AI, kebutuhan operasional menjadi lebih kompleks karena terdapat frontend, backend, database, model AI, file model,
+konfigurasi threshold, serta hasil prediksi.
+Masalah utama
+Monitoring container masih dilakukan manual melalui docker ps, docker logs, dan docker compose.
+Restart service dan deployment project masih mengandalkan akses SSH.
+Konfigurasi AI model seperti path model, confidence threshold, dan device belum memiliki UI.
+Riwayat deployment dan log perubahan belum terdokumentasi otomatis.
+Akses publik via tunnel perlu dikelola dengan rapi agar tidak membuka service sensitif.
+4. Goals dan Non-Goals
+Goals
+Menyediakan dashboard server yang mudah dipahami.
+Mengontrol container Docker secara aman dari web.
+Mendukung deployment project dari folder yang
+diizinkan.
+Mengatur konfigurasi AI inference tanpa edit file manual.
+Menyediakan log viewer dan audit aktivitas admin.
+Mendukung expose web/API melalui Cloudflare Tunnel.
+Non-Goals
+Bukan pengganti penuh Kubernetes dashboard.
+Bukan multi-tenant cloud platform untuk publik besar.
+Tidak menyediakan web terminal bebas pada versi awal.
+Tidak membuka database/SSH langsung ke internet.
+Tidak dirancang untuk training AI berat.
+Tidak menjadi sistem billing atau hosting komersial.
+5. Stakeholder dan Persona
+Persona Kebutuhan Prioritas
+Owner/Admin ServerMengelola service, log, deployment, tunnel, konfigurasi AI. High
+Developer Project Melihat status backend/frontend dan restart service saat testing.Medium
+Dosen/Client Demo Mengakses web demo via domain publik tanpa melihat panel admin.Medium
+System Auditor Melihat riwayat aktivitas admin dan perubahan konfigurasi. Low-Medium
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+
+=== PAGE 4 ===
+6. Ruang Lingkup Produk
+6.1 MVP Scope
+Area Fitur MVP Output
+Authentication Login admin, JWT/session, logout. Panel hanya bisa diakses admin.
+System DashboardCPU, RAM, disk, uptime, IP, status Docker.Ringkasan kesehatan server.
+Docker Manager List container, start, stop, restart. Kontrol container dasar.
+Log Viewer Melihat log container dengan tail limit. Debug cepat dari browser.
+Project Manager Deploy/restart project dari /server/apps. Deployment berbasis Docker Compose.
+AI Settings Model path, confidence, image size, device.Konfigurasi inference tersimpan.
+Audit Log Catatan aksi admin. Jejak aktivitas operasional.
+6.2 Future Scope
+Git-based deployment dari GitHub/GitLab.
+Backup dan restore PostgreSQL dari UI.
+Cloudflare Tunnel route manager.
+Role-based access control untuk tim.
+Notification ke Telegram/Discord saat service down.
+Scheduler untuk backup dan health check.
+AI inference test langsung dari UI.
+Model registry internal untuk versi model AI.
+7 . User Flow Utama
+7 .1 Login dan melihat dashboard
+Admin membuka https://panel.domain.com
+  -> Login
+    -> Dashboard
+      -> Melihat CPU/RAM/Disk/Docker status
+        -> Memilih service yang perlu diperiksa
+7 .2 Restart service bermasalah
+Dashboard menunjukkan container API unhealthy
+  -> Admin membuka Container Manager
+    -> Pilih container cdss-api
+      -> Klik Restart
+        -> Sistem mencatat audit log
+          -> Admin melihat log terbaru
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+
+=== PAGE 5 ===
+7 .3 Deploy project dari folder
+Admin membuka Project Manager
+  -> Pilih project /server/apps/cdss-web
+    -> Klik Deploy
+      -> Backend menjalankan docker compose up -d
+        -> Status deploy ditampilkan
+          -> Log deploy tersimpan
+7 .4 Mengubah konfigurasi AI inference
+Admin membuka AI Settings
+  -> Ubah confidence threshold dari 0.50 ke 0.65
+    -> Simpan konfigurasi
+      -> Restart AI inference service
+        -> Test inference satu gambar
+8. Functional Requirements
+FR-001 - Login Admin
+Admin harus dapat login menggunakan username/email dan password. Password disimpan dalam bentuk hash.
+MVP High
+FR-002 - Session Management
+Sistem harus menyediakan sesi/JWT dengan masa berlaku terbatas dan mekanisme logout.
+MVP High
+FR-003 - System Status Dashboard
+Sistem harus menampilkan CPU usage, RAM usage, disk usage, uptime, IP server, dan status Docker daemon.
+MVP High
+FR-004 - Docker Container List
+Sistem harus menampilkan daftar container dengan nama, image, status, port mapping, created date, dan restart policy.
+MVP High
+FR-005 - Container Control Action
+Admin harus dapat melakukan start, stop, dan restart container yang masuk whitelist.
+MVP High
+FR-006 - Container Log Viewer
+Sistem harus menampilkan log container dengan batas default 100-300 baris dan opsi refresh manual.
+MVP High
+FR-007 - Project Discovery
+Sistem harus membaca daftar project dari path yang diizinkan, terutama /server/apps, dan hanya menampilkan folder yang
+memiliki docker-compose.yml atau compose.yml.
+MVP High
+
+=== PAGE 6 ===
+FR-008 - Project Deploy
+Admin harus dapat menjalankan docker compose up -d pada project yang dipilih melalui backend, tanpa memasukkan
+command bebas.
+MVP High
+FR-009 - Project Stop
+Admin harus dapat menjalankan docker compose down untuk project yang dipilih.
+MVP Medium
+FR-010 - AI Settings Management
+Sistem harus menyediakan halaman untuk mengatur model path, confidence threshold, image size, inference device, dan
+active model version.
+MVP High
+FR-011 - Model Upload
+Admin dapat mengunggah file model dengan ekstensi yang diizinkan seperti .pt, .onnx, atau .pkl. File disimpan di /
+server/data/models.
+V1.1 High
+FR-012 - Audit Log
+Setiap aksi penting seperti login, restart container, deploy project, upload model, dan perubahan setting harus dicatat.
+MVP High
+FR-013 - Health Check
+Sistem harus dapat melakukan health check HTTP ke service internal seperti frontend, backend, dan AI inference endpoint.
+V1.1 Medium
+FR-014 - Backup Trigger
+Admin dapat menjalankan backup manual untuk database atau folder project tertentu.
+V1.2 Medium
+FR-015 - Cloudflare Tunnel Status
+Sistem dapat menampilkan status service cloudflared, tetapi tidak wajib mengelola seluruh konfigurasi Cloudflare pada
+MVP.
+V1.1 Medium
+
+=== PAGE 7 ===
+9. Non-Functional Requirements
+Kategori Requirement Target
+Security Semua endpoint admin wajib autentikasi. 100% protected route.
+Security Tidak ada command shell bebas dari input user. Command whitelist only.
+Performance Dashboard status terbuka cepat pada jaringan lokal. < 2 detik.
+Reliability Panel tidak boleh ikut mati saat salah satu project target mati.Panel isolated container.
+MaintainabilityBackend dipisah per service layer. Docker/System/Project/AI service.
+Observability Audit log tersimpan untuk operasi penting. Minimal 90 hari.
+Portability Bisa dijalankan dengan Docker Compose. Single compose file.
+Resource Ringan untuk VM/laptop lama. Idle RAM panel < 500 MB.
+10. Arsitektur Sistem
+10.1 Logical Architecture
+Admin Browser
+  -> Cloudflare Tunnel / Local Network
+    -> Nginx Reverse Proxy
+      -> React Admin Frontend
+        -> Express Admin Backend API
+          -> Docker Engine via docker.sock or restricted command executor
+          -> System Metrics Collector
+          -> Project Config Manager
+          -> AI Model Config Manager
+          -> SQLite/PostgreSQL database
+10.2 Container Architecture
+server-control-panel
+  - panel-frontend   : React/Vite build served by Nginx
+  - panel-backend    : Node.js/Express API
+  - panel-db         : SQLite file or PostgreSQL optional
+  - reverse-proxy    : optional Nginx routing
+managed-projects
+  - cdss-web
+  - cdss-api
+  - ai-inference
+  - postgres
+  - redis
+
+=== PAGE 8 ===
+10.3 Recommended Stack
+Layer Teknologi Alasan
+Frontend React + Vite + Tailwind CSS Cepat, familiar, cocok dashboard modern.
+Backend Node.js + Express Ringan dan mudah integrasi Docker/system command.
+Docker Control dockerode atau command whitelistKontrol container dari API.
+Database MVP SQLite Ringan untuk single admin dan audit log.
+Database FuturePostgreSQL Lebih cocok untuk multi-user dan data besar.
+Reverse Proxy Nginx Routing frontend/backend dan SSL termination via Cloudflare.
+Public Access Cloudflare Tunnel Expose web tanpa port forwarding.
+11. Modul Produk
+11.1 Authentication Module
+Login admin.
+Password hash menggunakan bcrypt/argon2.
+JWT atau session cookie HTTP-only.
+Rate limit login.
+Logout dan invalidasi token.
+11.2 Dashboard Module
+Ringkasan CPU, RAM, disk, uptime, Docker status.
+Jumlah container running/stopped.
+Top container bermasalah.
+Status tunnel cloudflared.
+11.3 Docker Manager Module
+List container.
+Start/stop/restart container.
+View logs.
+Filter container berdasarkan label project.
+Proteksi container panel agar tidak bisa dihentikan dari UI biasa.
+11.4 Project Manager Module
+Scan project di /server/apps.
+Validasi file compose.
+Deploy, stop, restart compose project.
+Menampilkan port dan status service.
+Menyimpan deployment history.
+11.5 AI Management Module
+Daftar model yang tersedia.
+Upload model baru.
+Aktifkan model tertentu.
+Ubah threshold confidence.
+Ubah image size dan device inference.
+Test inference dengan sample image.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+
+=== PAGE 9 ===
+11.6 Audit Module
+Mencatat user, action, target, timestamp, result, dan IP.
+Menampilkan riwayat aktivitas.
+Filter berdasarkan jenis aksi dan tanggal.
+• 
+• 
+• 
+
+=== PAGE 10 ===
+12. Data Model
+12.1 Entity Overview
+User
+  -> AuditLog
+Project
+  -> DeploymentHistory
+ContainerSnapshot
+AIModel
+AISetting
+SystemMetricSnapshot
+12.2 Tabel Users
+Field Type Keterangan
+id uuid/int Primary key.
+name varchar Nama admin.
+email varchar unique Email login.
+password_hash text Password ter-hash.
+role enum owner, admin, viewer.
+is_active boolean Status akun.
+created_at datetime Waktu dibuat.
+12.3 Tabel Projects
+Field Type Keterangan
+id uuid/int Primary key.
+name varchar Nama project.
+path text Path project di /server/apps.
+compose_file varchar docker-compose.yml atau compose.yml.
+type enum web, api, ai, database, mixed.
+is_protected boolean Mencegah project penting dihentikan sembarangan.
+
+=== PAGE 11 ===
+12.4 Tabel AI Models
+Field Type Keterangan
+id uuid/int Primary key.
+name varchar Nama model.
+version varchar Versi model, contoh v1.0-yolov8n.
+file_path text Path file model.
+framework enum pytorch, onnx, sklearn.
+is_active boolean Model yang sedang dipakai.
+created_at datetime Waktu upload/register.
+12.5 Tabel AI Settings
+Field Type Default Keterangan
+confidence_threshold float 0.50 Ambang confidence prediksi.
+image_size int 640 Ukuran input inference.
+device enum cpu cpu, cuda, xpu jika tersedia.
+cam_method varchar HiResCAM Metode visual explanation.
+updated_at datetime - Waktu terakhir update.
+13. API Contract
+13.1 Authentication
+13.2 System Status
+POST /api/auth/login
+Body:
+{
+  "email": "admin@example.com",
+  "password": "secret"
+}
+Response:
+{
+  "success": true,
+  "token": "jwt-token",
+  "user": { "id": 1, "name": "Admin", "role": "owner" }
+}
+GET /api/system/status
+Response:
+{
+  "cpu": { "usage_percent": 17.5 },
+  "memory": { "total_mb": 4096, "used_mb": 1850, "usage_percent": 45.1 },
+  "disk": { "total_gb": 120, "used_gb": 41, "usage_percent": 34.2 },
+  "uptime_seconds": 86400,
+  "docker": { "available": true, "version": "29.x" },
+  "cloudflared": { "active": true }
+}
+
+=== PAGE 12 ===
+13.3 Docker Containers
+13.4 Projects
+13.5 AI Settings
+14. Security Requirement
+Prinsip utama: panel ini mengontrol server. Jangan menyediakan terminal bebas, jangan expose database, jangan expose
+SSH, dan jangan menjalankan command dari input user tanpa whitelist.
+Area Requirement Keamanan
+Authentication Password wajib hash, login rate limit, session expiration.
+Authorization Role owner/admin/viewer; aksi destruktif hanya owner/admin.
+Docker Socket Akses /var/run/docker.sock hanya untuk backend panel; endpoint harus ketat.
+Command ExecutionGunakan whitelist command dan whitelist path.
+Project Path Hanya boleh mengakses /server/apps, /server/data, dan path yang disetujui.
+Upload Model Validasi ekstensi, ukuran file, lokasi penyimpanan, dan nama file.
+Cloudflare Panel admin sebaiknya dilindungi Cloudflare Access atau minimal auth internal kuat.
+Secrets Jangan tampilkan token/API key secara penuh di UI.
+Audit Catat semua aksi sensitif.
+GET /api/docker/containers
+POST /api/docker/containers/:name/start
+POST /api/docker/containers/:name/stop
+POST /api/docker/containers/:name/restart
+GET /api/docker/containers/:name/logs?tail=100
+GET /api/projects
+POST /api/projects/:id/deploy
+POST /api/projects/:id/down
+POST /api/projects/:id/restart
+GET /api/projects/:id/history
+GET /api/ai/settings
+PUT /api/ai/settings
+POST /api/ai/models/upload
+GET /api/ai/models
+POST /api/ai/models/:id/activate
+POST /api/ai/test-inference
+
+=== PAGE 13 ===
+15. Deployment Design
+15.1 Struktur Folder Server
+15.2 Docker Compose Panel
+15.3 Cloudflare Tunnel Routing
+Hostname Target Lokal Keterangan
+panel.domain.com http://localhost:3000 Admin panel.
+app.domain.com http://localhost:8081 Frontend web project.
+api.domain.com http://localhost:8000 Backend API.
+Catatan: service seperti PostgreSQL, Redis, SSH, dan Docker API tidak boleh dibuat public hostname.
+16. AI Model Management
+16.1 AI Deployment Target
+Panel mendukung AI inference ringan. Untuk project CDSS/EKG, model dapat berupa YOLOv8/ONNX/PyTorch yang berjalan
+sebagai service API terpisah. Panel hanya mengatur konfigurasi, memantau status, dan memicu restart service jika diperlukan.
+/server
+  /apps
+    /server-control-panel
+    /nginx-test
+    /cdss-web
+    /cdss-api
+    /ai-inference
+  /data
+    /models
+    /uploads
+    /sqlite
+    /postgres
+  /backup
+services:
+  panel-frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+  panel-backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /server/apps:/server/apps
+      - /server/data:/server/data
+      - /server/backup:/server/backup
+    environment:
+      - NODE_ENV=production
+      - JWT_SECRET=${JWT_SECRET}
+      - ALLOWED_PROJECT_ROOT=/server/apps
+    restart: unless-stopped
+
+=== PAGE 14 ===
+16.2 AI Setting Fields
+Setting Contoh Keterangan
+Active model best-yolov8n-v1.pt Model yang dipakai inference.
+Confidence threshold 0.50 Ambang minimal prediksi.
+Image size 640 Ukuran input ke model.
+Device cpu Device default agar aman di server lokal.
+CAM method HiResCAM Metode explainability jika tersedia.
+16.3 AI Inference Flow
+User upload image ke web project
+  -> Backend API menerima file
+    -> AI inference service memproses model
+      -> Result JSON + confidence + visualization path
+        -> Database menyimpan riwayat
+          -> Frontend menampilkan hasil
+
+=== PAGE 15 ===
+17 . UI/UX Requirement
+17 .1 Information Architecture
+Menu Isi
+Dashboard Status server, Docker, service, alert.
+Containers Daftar container dan action start/stop/restart/logs.
+Projects Daftar project dari /server/apps, deploy/down/restart.
+AI Models Daftar model, upload, activate, setting inference.
+Logs Log container dan audit log.
+Settings Admin account, security, allowed paths.
+17 .2 Dashboard Cards
+CPU usage card.
+Memory usage card.
+Disk usage card.
+Docker status card.
+Cloudflare Tunnel status card.
+Active services card.
+Latest audit activity.
+17 .3 UI Safety Pattern
+Action destructive seperti stop container harus memakai confirmation modal.
+Protected container seperti panel backend tidak boleh punya tombol stop biasa.
+Log viewer harus read-only.
+Secret/API key ditampilkan masked.
+Deploy action harus menampilkan progress dan hasil akhir.
+18. Observability
+Jenis Monitoring Data MVP?
+System Metrics CPU, RAM, disk, uptime. Ya
+Docker Metrics Container status, image, port, restart count. Ya
+Application Logs docker logs tail. Ya
+Audit Logs Admin action history. Ya
+Health Check HTTP status endpoint. V1.1
+Notifications Telegram/Discord alert. V1.2
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+
+=== PAGE 16 ===
+18.1 Audit Event Format
+19. Acceptance Criteria
+19.1 MVP Acceptance Criteria
+ID Kriteria Metode Verifikasi
+AC-001 Admin dapat login dan logout. Manual test.
+AC-002 Dashboard menampilkan CPU, RAM, disk, uptime.Bandingkan dengan command server.
+AC-003 Daftar container tampil lengkap. Bandingkan dengan docker ps -a.
+AC-004 Admin dapat restart container Nginx test. Action restart berhasil dan container tetap running.
+AC-005 Log Nginx dapat dibaca dari UI. Log menampilkan output terbaru.
+AC-006 Project dengan compose file dapat dideploy dari UI.docker compose ps menunjukkan service running.
+AC-007 Perubahan AI settings tersimpan. Reload halaman dan cek database/config.
+AC-008 Audit log mencatat restart/deploy/settings update.Cek halaman audit log.
+AC-009 Panel dapat dibuka melalui Cloudflare Tunnel.Akses https://panel.domain.com.
+AC-010 Endpoint tanpa token tidak dapat mengakses API admin.Request unauthenticated mendapat 401.
+20. Milestone Implementasi
+Milestone Durasi Estimasi Deliverable
+M1 - Setup Base Project 1-2 hari Monorepo frontend/backend, Docker Compose panel.
+M2 - Auth + Dashboard 2-3 hari Login, dashboard metrics, protected routes.
+M3 - Docker Manager 3-4 hari List container, start/stop/restart, logs.
+M4 - Project Manager 3-4 hari Scan /server/apps, deploy/down/restart compose.
+M5 - AI Settings 2-3 hari Model config, threshold, active model, restart inference.
+M6 - Security Hardening 2-3 hari Rate limit, audit log, whitelist, protected services.
+M7 - Tunnel + Release 1-2 hari Cloudflare Tunnel public hostname dan final test.
+{
+  "actor_id": 1,
+  "action": "container.restart",
+  "target": "cdss-api",
+  "status": "success",
+  "ip_address": "192.168.80.1",
+  "timestamp": "2026-05-27T13:00:00+07:00"
+}
+
+=== PAGE 17 ===
+21. Risiko dan Mitigasi
+Risiko Dampak Mitigasi
+Docker socket terlalu
+powerful.
+Jika backend compromise, server bisa
+dikontrol penuh.
+Endpoint ketat, auth kuat, whitelist, jangan expose
+backend publik tanpa proxy/auth.
+Command injection. Eksekusi command berbahaya. Jangan menerima command bebas; gunakan parameter
+tervalidasi.
+Panel admin terekspos
+publik.
+Brute force/akses ilegal. Cloudflare Access, rate limit, password kuat, 2FA future.
+VM mati jika laptop host
+shutdown.
+Service online ikut mati. UPS, auto-start VM, monitoring uptime, backup
+deployment ke VPS jika production.
+Model AI terlalu berat.Inference lambat atau server hang.Gunakan model ringan, CPU mode, queue, limit upload
+size.
+Storage penuh karena
+logs/uploads.
+Service gagal berjalan. Log rotation, upload cleanup, disk usage alert.
+22. Appendix
+22.1 Command Referensi Server
+22.2 Environment Variable Backend
+22.3 Definition of Done MVP
+Panel berjalan sebagai Docker Compose.
+Login admin berfungsi.
+Dashboard menampilkan metric real server.
+Container Docker bisa dilihat dan direstart.
+Log container bisa dibaca.
+# Cek container
+Docker ps
+# Cek log Nginx test
+docker logs nginx-test
+# Restart container
+docker restart nginx-test
+# Masuk folder project
+cd /server/apps/nama-project
+# Deploy compose
+docker compose up -d
+# Stop compose
+docker compose down
+NODE_ENV=production
+PORT=5000
+JWT_SECRET=change-this-secret
+DATABASE_URL=file:/server/data/sqlite/panel.db
+ALLOWED_PROJECT_ROOT=/server/apps
+ALLOWED_MODEL_ROOT=/server/data/models
+LOG_TAIL_LIMIT=200
+• 
+• 
+• 
+• 
+• 
+
+=== PAGE 18 ===
+Project compose bisa dideploy dari folder whitelist.
+AI setting bisa disimpan.
+Audit log mencatat aksi utama.
+Panel bisa diakses melalui domain Cloudflare Tunnel.
+Tidak ada database, SSH, atau Docker API yang terekspos langsung ke internet.
+22.4 Nama Alternatif Produk
+Local AI Server Control Panel
+Private AI Deployment Dashboard
+Self-Hosted AI Ops Panel
+CDSS Deployment Control Center
+Docker AI Server Manager
+Referensi internal: dokumen server lokal pengguna menyatakan target akhir berupa server lokal yang dapat diakses browser,
+menggunakan VMware Workstation Pro + Ubuntu Server, NAT/VMnet8, Docker, dan Nginx container pada port 8080.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 

@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply min-h-screen bg-bg text-ink font-sans antialiased;
+    background-image: radial-gradient(circle at top left, #1e3a8a 0, transparent 32%);
+    background-color: #0b1120;
+  }
+
+  *:focus-visible {
+    @apply outline-none ring-2 ring-blue-400 ring-offset-2 ring-offset-bg rounded-md;
+  }
+
+  button:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-colors;
+  }
+
+  .btn-primary {
+    @apply btn bg-blue-400 text-slate-900 hover:bg-blue-300 disabled:hover:bg-blue-400;
+  }
+
+  .btn-secondary {
+    @apply btn bg-slate-400/15 text-ink hover:bg-slate-400/25;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-400/15 text-red-300 hover:bg-red-400/25;
+  }
+
+  .btn-danger-solid {
+    @apply btn bg-red-400 text-red-950 hover:bg-red-300;
+  }
+
+  .btn-icon {
+    @apply inline-flex items-center justify-center w-9 h-9 rounded-lg bg-slate-400/10 text-ink hover:bg-slate-400/25 transition-colors disabled:hover:bg-slate-400/10;
+  }
+
+  .field {
+    @apply w-full px-3.5 py-2.5 rounded-xl border border-border bg-slate-950/60 text-ink placeholder:text-ink-muted focus:border-blue-400/50;
+  }
+
+  .card {
+    @apply rounded-3xl border border-border bg-card shadow-elev p-6;
+  }
+
+  .stat-card {
+    @apply rounded-3xl border border-border bg-card shadow-elev p-5 flex items-center gap-3.5;
+  }
+
+  .pill {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide;
+  }
+
+  .pill-muted { @apply pill bg-slate-400/15 text-ink-muted; }
+  .pill-success { @apply pill bg-emerald-400/15 text-emerald-400; }
+  .pill-danger { @apply pill bg-red-400/15 text-red-400; }
+  .pill-warn { @apply pill bg-amber-400/15 text-amber-400; }
+  .pill-info { @apply pill bg-blue-400/15 text-blue-400; }
+
+  .alert-error {
+    @apply rounded-xl border border-red-400/30 bg-red-400/10 text-red-200 px-3.5 py-3 text-sm;
+  }
+
+  .alert-success {
+    @apply rounded-xl border border-emerald-400/30 bg-emerald-400/10 text-emerald-200 px-3.5 py-3 text-sm;
+  }
+
+  .table-base {
+    @apply w-full border-collapse text-sm;
+  }
+
+  .table-base th {
+    @apply text-left text-[11px] uppercase tracking-wider text-ink-muted bg-slate-400/5 px-3.5 py-3 font-semibold border-b border-border;
+  }
+
+  .table-base td {
+    @apply px-3.5 py-3 border-b border-border align-top;
+  }
+
+  .table-base tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .mono { @apply font-mono; }
+
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-500 focus:text-white focus:rounded-lg;
+  }
+}
+
+pre {
+  font-family: theme('fontFamily.mono');
+}
