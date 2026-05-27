@@ -1,7 +1,7 @@
 {
-  "name": "local-ai-server-control-panel-backend",
-  "version": "0.2.0",
-  "description": "Backend API for Local AI Server Control Panel",
+  "name": "private-ai-ops-dashboard-backend",
+  "version": "2.0.0",
+  "description": "Backend API for Private AI Ops Dashboard",
   "type": "module",
   "main": "src/server.js",
   "scripts": {
@@ -21,6 +21,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
     "systeminformation": "^5.22.12"
   }
 }

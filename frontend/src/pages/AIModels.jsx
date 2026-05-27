@@ -1,51 +1,27 @@
-import { memo, useCallback, useRef, useState } from 'react';
-import { Upload, Trash2, CheckCircle2, RefreshCcw } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { Card, Table, Tag, Button, Space, Form, Upload, Select, Input, Popconfirm, App as AntApp, Typography } from 'antd';
+import {
+  ReloadOutlined,
+  UploadOutlined,
+  CheckCircleOutlined,
+  DeleteOutlined,
+  InboxOutlined
+} from '@ant-design/icons';
 import PageHeader from '../components/PageHeader.jsx';
-import ConfirmModal from '../components/ConfirmModal.jsx';
-import { ErrorAlert, Spinner } from '../components/Feedback.jsx';
 import AISettingsForm from './AISettingsForm.jsx';
-import { aiApi } from '../api.js';
+import { ErrorAlert } from '../components/Feedback.jsx';
+import { aiApi, getToken } from '../api.js';
 import { useApi } from '../hooks/useApi.js';
 import { formatBytes, formatDateTime } from '../utils/format.js';
 
-const ModelRow = memo(function ModelRow({ model, onActivate, onDelete }) {
-  return (
-    <tr>
-      <td className="mono">{model.name}</td>
-      <td className="text-sm">{model.version || '-'}</td>
-      <td className="text-sm">{model.framework}</td>
-      <td className="text-xs text-ink-muted">{formatBytes(model.size_bytes)}</td>
-      <td className="text-xs text-ink-muted">{formatDateTime(model.created_at)}</td>
-      <td>
-        {model.is_active
-          ? <span className="pill-success">active</span>
-          : <span className="pill-muted">idle</span>}
-      </td>
-      <td>
-        <div className="flex gap-1.5">
-          <button
-            type="button"
-            className="btn-icon"
-            aria-label={`Activate model ${model.name}`}
-            disabled={Boolean(model.is_active)}
-            onClick={() => onActivate(model)}
-          >
-            <CheckCircle2 size={15} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            className="btn-icon"
-            aria-label={`Delete model ${model.name}`}
-            disabled={Boolean(model.is_active)}
-            onClick={() => onDelete(model)}
-          >
-            <Trash2 size={15} aria-hidden="true" />
-          </button>
-        </div>
-      </td>
-    </tr>
-  );
-});
+const { Text } = Typography;
+const { Dragger } = Upload;
+
+const FRAMEWORKS = [
+  { value: 'pytorch', label: 'PyTorch' },
+  { value: 'onnx', label: 'ONNX' },
+  { value: 'sklearn', label: 'scikit-learn' }
+];
 
 export default function AIModels() {
   const fetchSettings = useCallback((signal) => aiApi.getSettings(signal), []);
@@ -54,13 +30,10 @@ export default function AIModels() {
   const settingsState = useApi(fetchSettings);
   const modelsState = useApi(fetchModels);
 
+  const [uploadForm] = Form.useForm();
   const [uploading, setUploading] = useState(false);
-  const [framework, setFramework] = useState('pytorch');
-  const [version, setVersion] = useState('');
-  const [confirm, setConfirm] = useState({ open: false, model: null });
-  const [deleting, setDeleting] = useState(false);
-  const [actionError, setActionError] = useState(null);
-  const fileRef = useRef(null);
+  const [busyId, setBusyId] = useState(null);
+  const { message } = AntApp.useApp();
 
   const settings = settingsState.data?.settings;
   const models = modelsState.data?.models || [];
@@ -69,183 +42,174 @@ export default function AIModels() {
     await Promise.all([settingsState.refresh(), modelsState.refresh()]);
   }, [settingsState, modelsState]);
 
-  const handleUpload = useCallback(async (event) => {
-    event.preventDefault();
-    const file = fileRef.current?.files?.[0];
-    if (!file) {
-      setActionError(new Error('Pilih file model dulu'));
+  const handleUpload = useCallback(async () => {
+    const values = await uploadForm.validateFields().catch(() => null);
+    if (!values) return;
+    const fileList = values.file?.fileList || [];
+    if (fileList.length === 0) {
+      message.error('Pilih file model dulu');
       return;
     }
+
     setUploading(true);
-    setActionError(null);
     try {
       const fd = new FormData();
-      fd.append('model', file);
-      fd.append('framework', framework);
-      if (version) fd.append('version', version);
+      fd.append('model', fileList[0].originFileObj);
+      fd.append('framework', values.framework || 'pytorch');
+      if (values.version) fd.append('version', values.version);
       await aiApi.uploadModel(fd);
-      fileRef.current.value = '';
-      setVersion('');
+      uploadForm.resetFields();
+      message.success('Model terupload');
       await refreshAll();
     } catch (err) {
-      setActionError(err);
+      message.error(err.message);
     } finally {
       setUploading(false);
     }
-  }, [framework, version, refreshAll]);
+  }, [uploadForm, message, refreshAll]);
 
   const activate = useCallback(async (model) => {
-    setActionError(null);
+    setBusyId(`activate:${model.id}`);
     try {
       await aiApi.activateModel(model.id);
+      message.success(`${model.name} diaktifkan`);
       await refreshAll();
     } catch (err) {
-      setActionError(err);
-    }
-  }, [refreshAll]);
-
-  const requestDelete = useCallback((model) => {
-    setConfirm({ open: true, model });
-  }, []);
-
-  const cancelDelete = useCallback(() => {
-    setConfirm({ open: false, model: null });
-  }, []);
-
-  async function executeDelete() {
-    if (!confirm.model) return;
-    setDeleting(true);
-    setActionError(null);
-    try {
-      await aiApi.deleteModel(confirm.model.id);
-      setConfirm({ open: false, model: null });
-      await refreshAll();
-    } catch (err) {
-      setActionError(err);
+      message.error(err.message);
     } finally {
-      setDeleting(false);
+      setBusyId(null);
     }
-  }
+  }, [message, refreshAll]);
 
-  const loading = settingsState.loading || modelsState.loading;
-  const error = settingsState.error || modelsState.error;
+  const remove = useCallback(async (model) => {
+    setBusyId(`delete:${model.id}`);
+    try {
+      await aiApi.deleteModel(model.id);
+      message.success('Model dihapus');
+      await refreshAll();
+    } catch (err) {
+      message.error(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  }, [message, refreshAll]);
+
+  const columns = [
+    { title: 'Name', dataIndex: 'name', render: (n) => <span className="mono">{n}</span> },
+    { title: 'Version', dataIndex: 'version', render: (v) => v || '-' },
+    { title: 'Framework', dataIndex: 'framework', width: 110, render: (f) => <Tag>{f}</Tag> },
+    { title: 'Size', dataIndex: 'size_bytes', width: 100, render: (b) => formatBytes(b) },
+    { title: 'Created', dataIndex: 'created_at', responsive: ['md'], render: (v) => <Text type="secondary" style={{ fontSize: 12 }}>{formatDateTime(v)}</Text> },
+    {
+      title: 'Status', dataIndex: 'is_active', width: 100,
+      render: (active) => active ? <Tag color="success">active</Tag> : <Tag>idle</Tag>
+    },
+    {
+      title: 'Action', key: 'action', width: 120,
+      render: (_, row) => (
+        <Space size={4}>
+          <Popconfirm
+            title="Aktifkan model ini?"
+            onConfirm={() => activate(row)}
+            okText="Aktifkan" cancelText="Batal"
+            disabled={Boolean(row.is_active)}
+          >
+            <Button
+              size="small" type="text" icon={<CheckCircleOutlined />}
+              disabled={Boolean(row.is_active)}
+              loading={busyId === `activate:${row.id}`}
+              aria-label={`Activate ${row.name}`}
+            />
+          </Popconfirm>
+          <Popconfirm
+            title="Hapus model?"
+            description="File akan dihapus permanen dari disk."
+            onConfirm={() => remove(row)}
+            okText="Hapus" cancelText="Batal" okButtonProps={{ danger: true }}
+            disabled={Boolean(row.is_active)}
+          >
+            <Button
+              size="small" type="text" danger icon={<DeleteOutlined />}
+              disabled={Boolean(row.is_active)}
+              loading={busyId === `delete:${row.id}`}
+              aria-label={`Delete ${row.name}`}
+            />
+          </Popconfirm>
+        </Space>
+      )
+    }
+  ];
 
   return (
-    <div className="grid gap-5">
+    <>
       <PageHeader
         eyebrow="Inference"
         title="AI Models"
-        description="Atur konfigurasi inference dan model aktif."
-        actions={
-          <button type="button" className="btn-secondary" onClick={refreshAll} disabled={loading}>
-            {loading ? <Spinner /> : <RefreshCcw size={15} aria-hidden="true" />}
-            Refresh
-          </button>
+        description="Konfigurasi inference dan manajemen model AI."
+        actions={<Button icon={<ReloadOutlined />} onClick={refreshAll} loading={settingsState.loading || modelsState.loading}>Refresh</Button>}
+      />
+
+      <ErrorAlert error={settingsState.error || modelsState.error} onRetry={refreshAll} />
+
+      <Card
+        title="Inference Settings"
+        extra={
+          <Text type="secondary">
+            Active: <span className="mono">{settings?.active_model_name || '-'}</span>
+            {settings?.active_model_version && ` (${settings.active_model_version})`}
+          </Text>
         }
-      />
-
-      <ErrorAlert error={error} onRetry={refreshAll} />
-      <ErrorAlert error={actionError} />
-
-      <section className="card">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold m-0 mb-1">Inference Settings</h2>
-          <p className="text-ink-muted text-sm m-0">
-            Active model: <strong className="text-ink">{settings?.active_model_name || '-'}</strong>
-            {settings?.active_model_version ? ` (${settings.active_model_version})` : ''}
-          </p>
-        </div>
+        style={{ marginBottom: 16 }}
+      >
         {settings && <AISettingsForm settings={settings} onSaved={refreshAll} />}
-      </section>
+      </Card>
 
-      <section className="card">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold m-0 mb-1">Upload Model</h2>
-          <p className="text-ink-muted text-sm m-0">
-            Allowed: .pt, .pth, .onnx, .pkl. File akan disimpan ke ALLOWED_MODEL_ROOT.
-          </p>
-        </div>
-        <form onSubmit={handleUpload} className="grid gap-3 grid-cols-1 lg:grid-cols-[1.4fr_0.8fr_1fr_auto] items-end">
-          <label className="grid gap-1.5">
-            <span className="sr-only">Model file</span>
-            <input
-              ref={fileRef}
-              type="file"
+      <Card title="Upload Model" style={{ marginBottom: 16 }}>
+        <Form form={uploadForm} layout="vertical" onFinish={handleUpload} initialValues={{ framework: 'pytorch' }}>
+          <Form.Item
+            name="file"
+            rules={[{ required: true, message: 'Pilih file model dulu' }]}
+            valuePropName="file"
+          >
+            <Dragger
               accept=".pt,.pth,.onnx,.pkl"
-              className="field !p-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-400/15 file:text-blue-300 file:cursor-pointer"
-              aria-label="Model file"
-            />
-          </label>
-          <label className="grid gap-1.5">
-            <span className="sr-only">Framework</span>
-            <select value={framework} onChange={(e) => setFramework(e.target.value)} className="field" aria-label="Framework">
-              <option value="pytorch">pytorch</option>
-              <option value="onnx">onnx</option>
-              <option value="sklearn">sklearn</option>
-            </select>
-          </label>
-          <label className="grid gap-1.5">
-            <span className="sr-only">Version</span>
-            <input
-              placeholder="version (mis. v1.0-yolov8n)"
-              value={version}
-              onChange={(e) => setVersion(e.target.value)}
-              className="field"
-              aria-label="Model version"
-            />
-          </label>
-          <button type="submit" className="btn-primary" disabled={uploading} aria-busy={uploading || undefined}>
-            {uploading ? <Spinner /> : <Upload size={15} aria-hidden="true" />}
-            {uploading ? 'Mengunggah...' : 'Upload'}
-          </button>
-        </form>
-      </section>
+              maxCount={1}
+              multiple={false}
+              beforeUpload={() => false}
+              style={{ background: '#FAFAFA' }}
+            >
+              <p className="ant-upload-drag-icon"><InboxOutlined /></p>
+              <p className="ant-upload-text">Klik atau drag file model ke area ini</p>
+              <p className="ant-upload-hint">Format: .pt, .pth, .onnx, .pkl</p>
+            </Dragger>
+          </Form.Item>
 
-      <section className="card !p-0 overflow-hidden">
-        <div className="p-6 pb-4">
-          <h2 className="text-lg font-semibold m-0 mb-1">Models</h2>
-          <p className="text-ink-muted text-sm m-0">{models.length} model terdaftar.</p>
-        </div>
-        <div className="overflow-auto">
-          <table className="table-base min-w-[820px]">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Version</th>
-                <th>Framework</th>
-                <th>Size</th>
-                <th>Created</th>
-                <th>Status</th>
-                <th className="w-32">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {models.map((model) => (
-                <ModelRow
-                  key={model.id}
-                  model={model}
-                  onActivate={activate}
-                  onDelete={requestDelete}
-                />
-              ))}
-              {models.length === 0 && !loading && (
-                <tr><td colSpan={7} className="text-center py-7 text-ink-muted">Belum ada model.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 12, alignItems: 'flex-end' }}>
+            <Form.Item name="framework" label="Framework" style={{ marginBottom: 0 }}>
+              <Select options={FRAMEWORKS} />
+            </Form.Item>
+            <Form.Item name="version" label="Version (opsional)" style={{ marginBottom: 0 }}>
+              <Input placeholder="v1.0-yolov8n" />
+            </Form.Item>
+            <Form.Item style={{ marginBottom: 0 }}>
+              <Button type="primary" htmlType="submit" loading={uploading} icon={<UploadOutlined />}>
+                Upload
+              </Button>
+            </Form.Item>
+          </div>
+        </Form>
+      </Card>
 
-      <ConfirmModal
-        open={confirm.open}
-        title="Hapus model?"
-        message={`Model "${confirm.model?.name}" akan dihapus secara permanen dari disk.`}
-        confirmLabel="Hapus"
-        danger
-        loading={deleting}
-        onCancel={cancelDelete}
-        onConfirm={executeDelete}
-      />
-    </div>
+      <Card title="Models" extra={<Text type="secondary">{models.length} terdaftar</Text>} bodyStyle={{ padding: 0 }}>
+        <Table
+          rowKey="id"
+          columns={columns}
+          dataSource={models}
+          loading={modelsState.loading}
+          pagination={{ pageSize: 10 }}
+          scroll={{ x: 'max-content' }}
+        />
+      </Card>
+    </>
   );
 }

@@ -21,9 +21,17 @@ import projectsRoutes from './routes/projects.routes.js';
 import aiRoutes from './routes/ai.routes.js';
 import auditRoutes from './routes/audit.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
+import topologyRoutes from './routes/topology.routes.js';
+import wizardRoutes from './routes/wizard.routes.js';
+import inferenceRoutes from './routes/inference.routes.js';
+import backupRoutes from './routes/backup.routes.js';
+import usersRoutes from './routes/users.routes.js';
 
 import { getDb } from './db/index.js';
 import { ensureSeedAdmin } from './services/user.service.js';
+import { startBackupScheduler, stopAllSchedulers } from './services/scheduler.service.js';
+import { startWatchdog, stopWatchdog } from './services/watchdog.service.js';
+import { notify } from './services/notification.service.js';
 
 const app = express();
 const PORT = process.env.PORT || 5500;
@@ -44,6 +52,11 @@ app.use('/api/projects', projectsRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/topology', topologyRoutes);
+app.use('/api/deployment/wizard', wizardRoutes);
+app.use('/api/ai/inference', inferenceRoutes);
+app.use('/api/backups', backupRoutes);
+app.use('/api/users', usersRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
@@ -57,8 +70,24 @@ app.use((err, req, res, next) => {
 async function bootstrap() {
   getDb();
   await ensureSeedAdmin();
+  startBackupScheduler();
+  startWatchdog();
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Panel backend running on port ${PORT}`);
+    notify({
+      level: 'info',
+      title: 'Panel backend started',
+      body: `Listening on port ${PORT}`
+    }).catch(() => {});
+  });
+}
+
+for (const sig of ['SIGINT', 'SIGTERM']) {
+  process.on(sig, () => {
+    console.log(`[server] received ${sig}, shutting down schedulers...`);
+    stopAllSchedulers();
+    stopWatchdog();
+    process.exit(0);
   });
 }
 

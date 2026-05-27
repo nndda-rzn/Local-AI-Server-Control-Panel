@@ -1,222 +1,267 @@
-import { memo, useCallback, useState } from 'react';
-import { Play, Square, RefreshCcw, Terminal, X } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { Card, Table, Tag, Button, Space, Drawer, Popconfirm, App as AntApp, Typography, Select, Input } from 'antd';
+import {
+  PlayCircleOutlined,
+  PauseCircleOutlined,
+  ReloadOutlined,
+  FileTextOutlined,
+  CloseOutlined,
+  SearchOutlined
+} from '@ant-design/icons';
 import PageHeader from '../components/PageHeader.jsx';
-import ConfirmModal from '../components/ConfirmModal.jsx';
-import { ErrorAlert, Spinner } from '../components/Feedback.jsx';
+import { ErrorAlert } from '../components/Feedback.jsx';
 import { dockerApi } from '../api.js';
 import { useApi } from '../hooks/useApi.js';
 import { formatDateTime, formatPort } from '../utils/format.js';
 
+const { Text } = Typography;
 const PROTECTED = new Set(['panel-backend', 'panel-frontend']);
 
-function StatePill({ state }) {
-  const map = {
-    running: 'pill-success',
-    exited: 'pill-danger',
-    paused: 'pill-warn',
-    restarting: 'pill-info'
-  };
-  return <span className={map[state] || 'pill-muted'}>{state}</span>;
-}
-
-const ContainerRow = memo(function ContainerRow({ container, busyKey, onAction, onLogs }) {
-  const isProtected = PROTECTED.has(container.name);
-
-  return (
-    <tr>
-      <td className="mono">
-        {container.name}
-        {isProtected && <span className="pill-warn ml-2">protected</span>}
-      </td>
-      <td className="text-sm">{container.image}</td>
-      <td><StatePill state={container.state} /></td>
-      <td className="text-xs text-ink-muted">{container.status}</td>
-      <td className="mono text-xs text-ink-muted">
-        {(container.ports || []).map((port, index) => (
-          <div key={`${container.id}-port-${index}`}>{formatPort(port)}</div>
-        ))}
-      </td>
-      <td className="text-xs text-ink-muted whitespace-nowrap">
-        {container.created ? formatDateTime(new Date(container.created * 1000).toISOString()) : '-'}
-      </td>
-      <td className="text-xs">
-        <span className="pill-muted">{container.restartPolicy || 'no'}</span>
-        {container.restartCount > 0 && (
-          <span className="text-ink-muted ml-1.5">×{container.restartCount}</span>
-        )}
-      </td>
-      <td>
-        <div className="flex gap-1.5">
-          <button
-            type="button"
-            className="btn-icon"
-            aria-label={`Start ${container.name}`}
-            disabled={busyKey === `${container.id}:start`}
-            onClick={() => onAction(container, 'start')}
-          >
-            <Play size={15} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            className="btn-icon"
-            aria-label={`Stop ${container.name}`}
-            disabled={isProtected || busyKey === `${container.id}:stop`}
-            onClick={() => onAction(container, 'stop')}
-          >
-            <Square size={15} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            className="btn-icon"
-            aria-label={`Restart ${container.name}`}
-            disabled={busyKey === `${container.id}:restart`}
-            onClick={() => onAction(container, 'restart')}
-          >
-            <RefreshCcw size={15} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            className="btn-icon"
-            aria-label={`View logs of ${container.name}`}
-            onClick={() => onLogs(container)}
-          >
-            <Terminal size={15} aria-hidden="true" />
-          </button>
-        </div>
-      </td>
-    </tr>
-  );
-});
+const STATE_COLOR = {
+  running: 'success',
+  exited: 'error',
+  paused: 'warning',
+  restarting: 'processing',
+  created: 'default',
+  dead: 'error'
+};
 
 export default function Containers() {
   const fetchList = useCallback((signal) => dockerApi.list(signal), []);
   const { data, error, loading, refresh } = useApi(fetchList, [], { pollMs: 12000 });
-
-  const [logs, setLogs] = useState({ name: '', text: '', loading: false });
-  const [pending, setPending] = useState({ open: false, container: null, action: null });
-  const [busyKey, setBusyKey] = useState(null);
-  const [actionError, setActionError] = useState(null);
-
   const containers = data?.containers || [];
 
-  const viewLogs = useCallback(async (container) => {
-    setLogs({ name: container.name, text: 'Loading...', loading: true });
+  const [logsDrawer, setLogsDrawer] = useState({ open: false, name: '', text: '', loading: false });
+  const [busyKey, setBusyKey] = useState(null);
+  const [projectFilter, setProjectFilter] = useState('all');
+  const [stateFilter, setStateFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const { message } = AntApp.useApp();
+
+  const projectOptions = useMemo(() => {
+    const set = new Set();
+    let standalone = false;
+    for (const c of containers) {
+      if (c.project) set.add(c.project);
+      else standalone = true;
+    }
+    const opts = [{ value: 'all', label: `Semua project (${containers.length})` }];
+    [...set].sort().forEach((p) => {
+      const count = containers.filter((c) => c.project === p).length;
+      opts.push({ value: p, label: `${p} (${count})` });
+    });
+    if (standalone) {
+      const count = containers.filter((c) => !c.project).length;
+      opts.push({ value: '__standalone__', label: `Standalone (${count})` });
+    }
+    return opts;
+  }, [containers]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return containers.filter((c) => {
+      if (projectFilter === '__standalone__' && c.project) return false;
+      if (projectFilter !== 'all' && projectFilter !== '__standalone__' && c.project !== projectFilter) return false;
+      if (stateFilter !== 'all' && c.state !== stateFilter) return false;
+      if (q && !`${c.name} ${c.image} ${c.service || ''}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [containers, projectFilter, stateFilter, search]);
+
+  const viewLogs = useCallback(async (name) => {
+    setLogsDrawer({ open: true, name, text: 'Loading...', loading: true });
     try {
-      const result = await dockerApi.logs(container.name, 200);
-      setLogs({ name: container.name, text: result.logs || '(empty)', loading: false });
+      const result = await dockerApi.logs(name, 200);
+      setLogsDrawer({ open: true, name, text: result.logs || '(empty)', loading: false });
     } catch (err) {
-      setLogs({ name: container.name, text: `Error: ${err.message}`, loading: false });
+      setLogsDrawer({ open: true, name, text: `Error: ${err.message}`, loading: false });
     }
   }, []);
 
-  const closeLogs = useCallback(() => {
-    setLogs({ name: '', text: '', loading: false });
-  }, []);
-
-  const requestAction = useCallback((container, action) => {
-    if (action === 'start') {
-      executeAction(container, action);
-      return;
-    }
-    setPending({ open: true, container, action });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function executeAction(container, action) {
+  const executeAction = useCallback(async (container, action) => {
     setBusyKey(`${container.id}:${action}`);
-    setActionError(null);
     try {
       await dockerApi.action(container.name, action);
+      message.success(`${action} berhasil`);
       await refresh();
     } catch (err) {
-      setActionError(err);
+      message.error(err.message);
     } finally {
       setBusyKey(null);
-      setPending({ open: false, container: null, action: null });
     }
-  }
+  }, [refresh, message]);
 
-  const cancelPending = useCallback(() => {
-    setPending({ open: false, container: null, action: null });
-  }, []);
+  const columns = [
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
+      render: (name) => (
+        <Space size={6}>
+          <span className="mono">{name}</span>
+          {PROTECTED.has(name) && <Tag color="warning">protected</Tag>}
+        </Space>
+      )
+    },
+    { title: 'Image', dataIndex: 'image', key: 'image', ellipsis: true },
+    {
+      title: 'State',
+      dataIndex: 'state',
+      key: 'state',
+      width: 120,
+      render: (state) => <Tag color={STATE_COLOR[state] || 'default'}>{state}</Tag>
+    },
+    { title: 'Status', dataIndex: 'status', key: 'status', ellipsis: true, responsive: ['lg'] },
+    {
+      title: 'Ports',
+      dataIndex: 'ports',
+      key: 'ports',
+      width: 140,
+      responsive: ['md'],
+      render: (ports) => (
+        <div className="mono" style={{ fontSize: 12 }}>
+          {(ports || []).slice(0, 3).map((p, i) => <div key={i}>{formatPort(p)}</div>)}
+        </div>
+      )
+    },
+    {
+      title: 'Created',
+      dataIndex: 'created',
+      key: 'created',
+      width: 160,
+      responsive: ['xl'],
+      render: (created) => created ? <Text type="secondary" style={{ fontSize: 12 }}>{formatDateTime(new Date(created * 1000).toISOString())}</Text> : '-'
+    },
+    {
+      title: 'Restart',
+      dataIndex: 'restartPolicy',
+      key: 'restart',
+      width: 120,
+      responsive: ['xl'],
+      render: (policy, row) => (
+        <Space size={4}>
+          <Tag>{policy || 'no'}</Tag>
+          {row.restartCount > 0 && <Text type="secondary" style={{ fontSize: 11 }}>×{row.restartCount}</Text>}
+        </Space>
+      )
+    },
+    {
+      title: 'Action',
+      key: 'action',
+      width: 200,
+      render: (_, row) => {
+        const isProtected = PROTECTED.has(row.name);
+        return (
+          <Space size={4}>
+            <Button
+              size="small" type="text" icon={<PlayCircleOutlined />}
+              loading={busyKey === `${row.id}:start`}
+              onClick={() => executeAction(row, 'start')}
+              aria-label={`Start ${row.name}`}
+            />
+            <Popconfirm
+              title="Stop container?"
+              description={`Aksi stop pada "${row.name}" akan dijalankan.`}
+              okText="Stop" cancelText="Batal" okButtonProps={{ danger: true }}
+              onConfirm={() => executeAction(row, 'stop')}
+              disabled={isProtected}
+            >
+              <Button
+                size="small" type="text" icon={<PauseCircleOutlined />}
+                disabled={isProtected} loading={busyKey === `${row.id}:stop`}
+                aria-label={`Stop ${row.name}`}
+              />
+            </Popconfirm>
+            <Popconfirm
+              title="Restart container?"
+              description={`Aksi restart pada "${row.name}".`}
+              okText="Restart" cancelText="Batal"
+              onConfirm={() => executeAction(row, 'restart')}
+            >
+              <Button
+                size="small" type="text" icon={<ReloadOutlined />}
+                loading={busyKey === `${row.id}:restart`}
+                aria-label={`Restart ${row.name}`}
+              />
+            </Popconfirm>
+            <Button
+              size="small" type="text" icon={<FileTextOutlined />}
+              onClick={() => viewLogs(row.name)}
+              aria-label={`View logs ${row.name}`}
+            />
+          </Space>
+        );
+      }
+    }
+  ];
 
   return (
-    <div className="grid gap-5">
+    <>
       <PageHeader
         eyebrow="Docker"
         title="Containers"
-        description={`${containers.length} container terdeteksi.`}
+        description={`${filtered.length} dari ${containers.length} container ditampilkan.`}
         actions={
-          <button type="button" className="btn-secondary" onClick={refresh} disabled={loading}>
-            {loading ? <Spinner /> : <RefreshCcw size={15} aria-hidden="true" />}
-            Refresh
-          </button>
+          <Space wrap>
+            <Input
+              allowClear
+              prefix={<SearchOutlined />}
+              placeholder="Cari nama / image / service"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ minWidth: 240 }}
+            />
+            <Select
+              value={projectFilter}
+              onChange={setProjectFilter}
+              options={projectOptions}
+              style={{ minWidth: 200 }}
+              aria-label="Filter project"
+            />
+            <Select
+              value={stateFilter}
+              onChange={setStateFilter}
+              options={[
+                { value: 'all', label: 'Semua state' },
+                { value: 'running', label: 'Running' },
+                { value: 'exited', label: 'Exited' },
+                { value: 'paused', label: 'Paused' },
+                { value: 'restarting', label: 'Restarting' },
+                { value: 'created', label: 'Created' },
+                { value: 'dead', label: 'Dead' }
+              ]}
+              style={{ minWidth: 140 }}
+              aria-label="Filter state"
+            />
+            <Button icon={<ReloadOutlined />} onClick={refresh} loading={loading}>Refresh</Button>
+          </Space>
         }
       />
 
       <ErrorAlert error={error} onRetry={refresh} />
-      <ErrorAlert error={actionError} />
 
-      <section className="card !p-0 overflow-hidden">
-        <div className="overflow-auto">
-          <table className="table-base min-w-[820px]">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Image</th>
-                <th>State</th>
-                <th>Status</th>
-                <th>Ports</th>
-                <th>Created</th>
-                <th>Restart</th>
-                <th className="w-44">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {containers.map((container) => (
-                <ContainerRow
-                  key={container.id}
-                  container={container}
-                  busyKey={busyKey}
-                  onAction={requestAction}
-                  onLogs={viewLogs}
-                />
-              ))}
-              {containers.length === 0 && !loading && (
-                <tr><td colSpan={8} className="text-center py-7 text-ink-muted">Belum ada container terdeteksi.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <Card bodyStyle={{ padding: 0 }}>
+        <Table
+          rowKey="id"
+          columns={columns}
+          dataSource={containers}
+          loading={loading}
+          pagination={{ pageSize: 10, showSizeChanger: false }}
+          scroll={{ x: 'max-content' }}
+        />
+      </Card>
 
-      {logs.name && (
-        <section className="card" aria-live="polite">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h2 className="text-lg font-semibold m-0 mb-1">Logs: {logs.name}</h2>
-              <p className="text-ink-muted text-sm m-0">200 baris terakhir.</p>
-            </div>
-            <button type="button" className="btn-secondary" onClick={closeLogs} aria-label="Close logs">
-              <X size={15} aria-hidden="true" /> Close
-            </button>
-          </div>
-          <pre className="max-h-[460px] overflow-auto bg-slate-950 text-slate-300 rounded-2xl border border-border p-4 text-xs whitespace-pre-wrap break-words m-0">
-            {logs.text}
-          </pre>
-        </section>
-      )}
-
-      <ConfirmModal
-        open={pending.open}
-        title={pending.action === 'stop' ? 'Stop container?' : 'Restart container?'}
-        message={`Aksi ${pending.action} akan dijalankan pada container "${pending.container?.name}". Lanjutkan?`}
-        confirmLabel={pending.action === 'stop' ? 'Stop' : 'Restart'}
-        danger={pending.action === 'stop'}
-        onCancel={cancelPending}
-        onConfirm={() => executeAction(pending.container, pending.action)}
-        loading={Boolean(busyKey)}
-      />
-    </div>
+      <Drawer
+        title={<Space>Logs: <span className="mono">{logsDrawer.name}</span></Space>}
+        placement="right"
+        width={720}
+        open={logsDrawer.open}
+        onClose={() => setLogsDrawer({ open: false, name: '', text: '', loading: false })}
+        extra={<Button icon={<CloseOutlined />} type="text" onClick={() => setLogsDrawer({ open: false, name: '', text: '', loading: false })} />}
+      >
+        <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>200 baris terakhir.</Text>
+        <pre className="log-pre">{logsDrawer.text}</pre>
+      </Drawer>
+    </>
   );
 }

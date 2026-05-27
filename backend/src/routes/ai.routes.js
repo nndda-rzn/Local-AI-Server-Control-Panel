@@ -2,18 +2,19 @@ import express from 'express';
 import multer from 'multer';
 import path from 'node:path';
 import fs from 'node:fs';
-import { requireAuth } from '../middleware/auth.middleware.js';
+import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
 import {
   getSettings,
   updateSettings,
   listModels,
   activateModel,
   registerUploadedModel,
+  updateModelMetadata,
   deleteModel,
   VALIDATION
 } from '../services/ai.service.js';
 import { getAllowedModelRoot, isSafeName } from '../utils/paths.js';
-import { recordAudit, getClientIp } from '../services/audit.service.js';
+import { recordAudit, getClientIp, getUserAgent } from '../services/audit.service.js';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -55,7 +56,7 @@ router.get('/settings', (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-router.put('/settings', (req, res) => {
+router.put('/settings', requireRole('owner', 'admin'), (req, res) => {
   try {
     const updated = updateSettings(req.body || {});
     recordAudit({
@@ -79,7 +80,7 @@ router.get('/models', (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-router.post('/models/upload', (req, res) => {
+router.post('/models/upload', requireRole('owner', 'admin'), (req, res) => {
   upload.single('model')(req, res, (err) => {
     if (err) {
       return res.status(400).json({ message: err.message });
@@ -94,7 +95,13 @@ router.post('/models/upload', (req, res) => {
         storedFilename: req.file.filename,
         sizeBytes: req.file.size,
         framework: req.body?.framework,
-        version: req.body?.version
+        version: req.body?.version,
+        taskType: req.body?.taskType,
+        metrics: req.body?.metrics,
+        classLabels: req.body?.classLabels,
+        inputSize: req.body?.inputSize,
+        datasetSource: req.body?.datasetSource,
+        notes: req.body?.notes
       });
       recordAudit({
         actorId: req.user?.id,
@@ -113,7 +120,7 @@ router.post('/models/upload', (req, res) => {
   });
 });
 
-router.post('/models/:id/activate', (req, res) => {
+router.post('/models/:id/activate', requireRole('owner', 'admin'), (req, res) => {
   try {
     const settings = activateModel(Number(req.params.id));
     recordAudit({
@@ -130,7 +137,25 @@ router.post('/models/:id/activate', (req, res) => {
   }
 });
 
-router.delete('/models/:id', (req, res) => {
+router.put('/models/:id/metadata', requireRole('owner', 'admin'), (req, res) => {
+  try {
+    const model = updateModelMetadata(Number(req.params.id), req.body || {});
+    recordAudit({
+      actorId: req.user?.id,
+      actorName: req.user?.username,
+      action: 'ai.model.metadata.update',
+      target: model.name,
+      status: 'success',
+      ipAddress: getClientIp(req),
+      userAgent: getUserAgent(req)
+    });
+    res.json({ model });
+  } catch (error) {
+    res.status(error.status || 500).json({ message: error.message });
+  }
+});
+
+router.delete('/models/:id', requireRole('owner'), (req, res) => {
   try {
     const result = deleteModel(Number(req.params.id));
     recordAudit({

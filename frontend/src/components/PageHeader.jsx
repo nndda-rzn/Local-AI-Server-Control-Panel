@@ -1,18 +1,20 @@
-import { memo } from 'react';
+import { Typography, Space } from 'antd';
 
-function PageHeader({ eyebrow, title, description, actions }) {
+const { Title, Text } = Typography;
+
+export default function PageHeader({ eyebrow, title, description, actions }) {
   return (
-    <header className="flex items-end justify-between gap-4 flex-wrap">
+    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 16 }}>
       <div>
         {eyebrow && (
-          <p className="uppercase tracking-[0.18em] text-[11px] m-0 text-ink-muted">{eyebrow}</p>
+          <Text type="secondary" style={{ textTransform: 'uppercase', letterSpacing: '0.12em', fontSize: 11 }}>
+            {eyebrow}
+          </Text>
         )}
-        <h1 className="text-2xl font-semibold m-0">{title}</h1>
-        {description && <p className="text-ink-muted text-sm mt-1 m-0">{description}</p>}
+        <Title level={3} style={{ margin: '4px 0 0' }}>{title}</Title>
+        {description && <Text type="secondary">{description}</Text>}
       </div>
-      {actions && <div className="flex gap-2.5 items-center">{actions}</div>}
-    </header>
+      {actions && <Space>{actions}</Space>}
+    </div>
   );
 }
-
-export default memo(PageHeader);

@@ -1,11 +1,11 @@
 import express from 'express';
-import { requireAuth } from '../middleware/auth.middleware.js';
+import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
 import {
   listContainers,
   getContainerLogs,
   runContainerAction
 } from '../services/docker.service.js';
-import { recordAudit, getClientIp } from '../services/audit.service.js';
+import { recordAudit, getClientIp, getUserAgent } from '../services/audit.service.js';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -30,9 +30,10 @@ router.get('/containers/:name/logs', async (req, res, next) => {
   }
 });
 
-router.post('/containers/:name/:action', async (req, res) => {
+router.post('/containers/:name/:action', requireRole('owner', 'admin'), async (req, res) => {
   const { name, action } = req.params;
   const ip = getClientIp(req);
+  const ua = getUserAgent(req);
 
   try {
     const result = await runContainerAction(name, action);
@@ -42,7 +43,8 @@ router.post('/containers/:name/:action', async (req, res) => {
       action: `container.${action}`,
       target: name,
       status: 'success',
-      ipAddress: ip
+      ipAddress: ip,
+      userAgent: ua
     });
     res.json(result);
   } catch (error) {
@@ -53,6 +55,7 @@ router.post('/containers/:name/:action', async (req, res) => {
       target: name,
       status: 'failed',
       ipAddress: ip,
+      userAgent: ua,
       detail: { error: error.message }
     });
     res.status(error.status || 500).json({ message: error.message || 'Docker action failed' });

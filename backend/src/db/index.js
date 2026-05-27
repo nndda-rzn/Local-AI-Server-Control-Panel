@@ -19,6 +19,7 @@ export function getDb() {
   db.exec('PRAGMA foreign_keys = ON');
 
   initSchema(db);
+  runMigrations(db);
   return db;
 }
 
@@ -43,6 +44,7 @@ function initSchema(database) {
       target TEXT,
       status TEXT NOT NULL,
       ip_address TEXT,
+      user_agent TEXT,
       detail TEXT,
       timestamp TEXT NOT NULL DEFAULT (datetime('now'))
     );
@@ -66,7 +68,13 @@ function initSchema(database) {
       version TEXT,
       file_path TEXT NOT NULL,
       framework TEXT NOT NULL DEFAULT 'pytorch',
+      task_type TEXT,
       size_bytes INTEGER,
+      metrics_json TEXT,
+      class_labels_json TEXT,
+      input_size INTEGER,
+      dataset_source TEXT,
+      notes TEXT,
       is_active INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
@@ -77,6 +85,7 @@ function initSchema(database) {
       path TEXT NOT NULL,
       compose_file TEXT NOT NULL,
       type TEXT NOT NULL DEFAULT 'mixed',
+      status TEXT NOT NULL DEFAULT 'detected',
       is_protected INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
@@ -95,8 +104,72 @@ function initSchema(database) {
 
     CREATE INDEX IF NOT EXISTS idx_deployment_project ON deployment_history(project_id);
 
+    CREATE TABLE IF NOT EXISTS inference_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      model_id INTEGER,
+      model_name TEXT,
+      input_file TEXT,
+      result_json TEXT,
+      visualization_path TEXT,
+      inference_time_ms INTEGER,
+      status TEXT NOT NULL DEFAULT 'success',
+      actor_name TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_inference_model ON inference_history(model_id);
+    CREATE INDEX IF NOT EXISTS idx_inference_created ON inference_history(created_at);
+
+    CREATE TABLE IF NOT EXISTS backups (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      file_path TEXT NOT NULL,
+      size_bytes INTEGER,
+      scope_json TEXT,
+      status TEXT NOT NULL DEFAULT 'success',
+      created_by TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_backups_created ON backups(created_at);
+
     INSERT OR IGNORE INTO ai_settings (id) VALUES (1);
   `);
+}
+
+function runMigrations(database) {
+  const migrations = [
+    { table: 'users', column: 'email', sql: "ALTER TABLE users ADD COLUMN email TEXT" },
+    { table: 'users', column: 'updated_at', sql: "ALTER TABLE users ADD COLUMN updated_at TEXT" },
+    { table: 'audit_logs', column: 'user_agent', sql: "ALTER TABLE audit_logs ADD COLUMN user_agent TEXT" },
+    { table: 'projects', column: 'status', sql: "ALTER TABLE projects ADD COLUMN status TEXT NOT NULL DEFAULT 'detected'" },
+    { table: 'ai_models', column: 'task_type', sql: "ALTER TABLE ai_models ADD COLUMN task_type TEXT" },
+    { table: 'ai_models', column: 'metrics_json', sql: "ALTER TABLE ai_models ADD COLUMN metrics_json TEXT" },
+    { table: 'ai_models', column: 'class_labels_json', sql: "ALTER TABLE ai_models ADD COLUMN class_labels_json TEXT" },
+    { table: 'ai_models', column: 'input_size', sql: "ALTER TABLE ai_models ADD COLUMN input_size INTEGER" },
+    { table: 'ai_models', column: 'dataset_source', sql: "ALTER TABLE ai_models ADD COLUMN dataset_source TEXT" },
+    { table: 'ai_models', column: 'notes', sql: "ALTER TABLE ai_models ADD COLUMN notes TEXT" }
+  ];
+
+  for (const m of migrations) {
+    if (!hasColumn(database, m.table, m.column)) {
+      try {
+        database.exec(m.sql);
+        console.log(`[migrate] applied: ${m.sql}`);
+      } catch (error) {
+        console.error(`[migrate] failed for ${m.table}.${m.column}:`, error.message);
+      }
+    }
+  }
+}
+
+function hasColumn(database, table, column) {
+  try {
+    const rows = database.prepare(`PRAGMA table_info(${table})`).all();
+    return rows.some((r) => r.name === column);
+  } catch {
+    return false;
+  }
 }
 
 export function closeDb() {

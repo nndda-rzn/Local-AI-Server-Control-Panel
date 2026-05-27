@@ -1,8 +1,8 @@
 {
-  "name": "local-ai-server-control-panel",
-  "version": "1.0.0",
+  "name": "private-ai-ops-dashboard",
+  "version": "2.0.0",
   "private": true,
-  "description": "Monorepo runner untuk Local AI Server Control Panel",
+  "description": "Monorepo runner untuk Private AI Ops Dashboard",
   "scripts": {
     "install:all": "npm install --prefix backend && npm install --prefix frontend",
     "dev": "concurrently -n BE,FE -c blue,green \"npm run dev:be\" \"npm run dev:fe\"",

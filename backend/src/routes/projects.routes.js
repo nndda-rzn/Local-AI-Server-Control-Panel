@@ -1,5 +1,5 @@
 import express from 'express';
-import { requireAuth } from '../middleware/auth.middleware.js';
+import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
 import {
   listProjects,
   getProjectById,
@@ -7,7 +7,7 @@ import {
   listDeploymentHistory,
   executeProjectAction
 } from '../services/project.service.js';
-import { recordAudit, getClientIp } from '../services/audit.service.js';
+import { recordAudit, getClientIp, getUserAgent } from '../services/audit.service.js';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -49,9 +49,10 @@ router.get('/:id/history', (req, res, next) => {
 
 const ALLOWED_ACTIONS = new Set(['deploy', 'down', 'restart']);
 
-router.post('/:id/:action', async (req, res) => {
+router.post('/:id/:action', requireRole('owner', 'admin'), async (req, res) => {
   const action = req.params.action;
   const ip = getClientIp(req);
+  const ua = getUserAgent(req);
 
   if (!ALLOWED_ACTIONS.has(action)) {
     return res.status(400).json({ message: `Unsupported project action: ${action}` });

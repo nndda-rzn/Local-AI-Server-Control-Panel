@@ -1,12 +1,12 @@
 import { getDb } from '../db/index.js';
 
-export function recordAudit({ actorId = null, actorName = null, action, target = null, status = 'success', ipAddress = null, detail = null }) {
+export function recordAudit({ actorId = null, actorName = null, action, target = null, status = 'success', ipAddress = null, userAgent = null, detail = null }) {
   try {
     const db = getDb();
     db.prepare(`
-      INSERT INTO audit_logs (actor_id, actor_name, action, target, status, ip_address, detail)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(actorId, actorName, action, target, status, ipAddress, detail ? JSON.stringify(detail) : null);
+      INSERT INTO audit_logs (actor_id, actor_name, action, target, status, ip_address, user_agent, detail)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(actorId, actorName, action, target, status, ipAddress, userAgent, detail ? JSON.stringify(detail) : null);
   } catch (error) {
     console.error('[audit] failed to record:', error.message);
   }
@@ -53,4 +53,8 @@ export function getClientIp(req) {
     return forwarded.split(',')[0].trim();
   }
   return req.socket?.remoteAddress || req.ip || null;
+}
+
+export function getUserAgent(req) {
+  return req.headers['user-agent']?.slice(0, 250) || null;
 }

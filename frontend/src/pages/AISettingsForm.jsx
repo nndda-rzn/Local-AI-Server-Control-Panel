@@ -1,86 +1,99 @@
-import { useCallback, useState } from 'react';
-import { Save } from 'lucide-react';
-import { aiApi } from '../api.js';
-import { Spinner } from '../components/Feedback.jsx';
+import { useState } from 'react';
+import { Form, InputNumber, Select, Input, Button, Space, Popconfirm, App as AntApp } from 'antd';
+import { SaveOutlined, ReloadOutlined } from '@ant-design/icons';
+import { aiApi, inferenceApi } from '../api.js';
 
-const DEVICES = ['cpu', 'cuda', 'xpu', 'mps'];
+const DEVICES = [
+  { value: 'cpu', label: 'CPU' },
+  { value: 'cuda', label: 'CUDA (NVIDIA)' },
+  { value: 'xpu', label: 'XPU (Intel)' },
+  { value: 'mps', label: 'MPS (Apple)' }
+];
 
 export default function AISettingsForm({ settings, onSaved }) {
-  const [confidence, setConfidence] = useState(settings?.confidence_threshold ?? 0.5);
-  const [imageSize, setImageSize] = useState(settings?.image_size ?? 640);
-  const [device, setDevice] = useState(settings?.device || 'cpu');
-  const [camMethod, setCamMethod] = useState(settings?.cam_method || 'HiResCAM');
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const [form] = Form.useForm();
+  const [restarting, setRestarting] = useState(false);
+  const { message } = AntApp.useApp();
 
-  const handleSave = useCallback(async (event) => {
-    event.preventDefault();
-    setSaving(true);
-    setMessage('');
-    setError('');
+  async function handleFinish(values) {
     try {
-      await aiApi.updateSettings({
-        confidence_threshold: Number(confidence),
-        image_size: Number(imageSize),
-        device,
-        cam_method: camMethod
-      });
-      setMessage('Settings tersimpan');
+      await aiApi.updateSettings(values);
+      message.success('Settings tersimpan');
       onSaved?.();
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
+      message.error(err.message);
     }
-  }, [confidence, imageSize, device, camMethod, onSaved]);
+  }
+
+  async function handleRestart() {
+    setRestarting(true);
+    try {
+      const res = await inferenceApi.restartService();
+      message.success(`Inference service direstart (${res.container})`);
+    } catch (err) {
+      message.error(err.message);
+    } finally {
+      setRestarting(false);
+    }
+  }
 
   return (
-    <form onSubmit={handleSave} className="grid gap-4">
-      <div className="grid gap-3.5 grid-cols-1 sm:grid-cols-2">
-        <label className="grid gap-1.5">
-          <span className="text-xs text-ink-muted">Confidence threshold</span>
-          <input
-            type="number" min="0" max="1" step="0.01"
-            value={confidence}
-            onChange={(e) => setConfidence(e.target.value)}
-            className="field"
-          />
-        </label>
-        <label className="grid gap-1.5">
-          <span className="text-xs text-ink-muted">Image size</span>
-          <input
-            type="number" min="32" max="4096" step="32"
-            value={imageSize}
-            onChange={(e) => setImageSize(e.target.value)}
-            className="field"
-          />
-        </label>
-        <label className="grid gap-1.5">
-          <span className="text-xs text-ink-muted">Device</span>
-          <select value={device} onChange={(e) => setDevice(e.target.value)} className="field">
-            {DEVICES.map((d) => <option key={d} value={d}>{d}</option>)}
-          </select>
-        </label>
-        <label className="grid gap-1.5">
-          <span className="text-xs text-ink-muted">CAM method</span>
-          <input
-            value={camMethod}
-            onChange={(e) => setCamMethod(e.target.value)}
-            className="field"
-          />
-        </label>
+    <Form
+      form={form}
+      layout="vertical"
+      onFinish={handleFinish}
+      initialValues={{
+        confidence_threshold: settings?.confidence_threshold ?? 0.5,
+        image_size: settings?.image_size ?? 640,
+        device: settings?.device || 'cpu',
+        cam_method: settings?.cam_method || 'HiResCAM'
+      }}
+      style={{ maxWidth: 720 }}
+    >
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <Form.Item
+          name="confidence_threshold"
+          label="Confidence threshold"
+          rules={[{ required: true }]}
+        >
+          <InputNumber min={0} max={1} step={0.01} style={{ width: '100%' }} />
+        </Form.Item>
+
+        <Form.Item
+          name="image_size"
+          label="Image size"
+          rules={[{ required: true }]}
+        >
+          <InputNumber min={32} max={4096} step={32} style={{ width: '100%' }} />
+        </Form.Item>
+
+        <Form.Item name="device" label="Device" rules={[{ required: true }]}>
+          <Select options={DEVICES} />
+        </Form.Item>
+
+        <Form.Item name="cam_method" label="CAM method">
+          <Input placeholder="HiResCAM" />
+        </Form.Item>
       </div>
 
-      {message && <div className="alert-success" role="status">{message}</div>}
-      {error && <div className="alert-error" role="alert">{error}</div>}
-
-      <div>
-        <button type="submit" className="btn-primary" disabled={saving} aria-busy={saving || undefined}>
-          {saving ? <Spinner /> : <Save size={15} aria-hidden="true" />}
-          {saving ? 'Menyimpan...' : 'Simpan'}
-        </button>
-      </div>
-    </form>
+      <Form.Item style={{ marginBottom: 0 }}>
+        <Space wrap>
+          <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+            Simpan Settings
+          </Button>
+          <Popconfirm
+            title="Restart inference service?"
+            description="Container AI inference akan direstart. Pastikan AI_INFERENCE_CONTAINER sudah benar di .env."
+            okText="Restart"
+            cancelText="Batal"
+            onConfirm={handleRestart}
+          >
+            <Button icon={<ReloadOutlined />} loading={restarting}>
+              Restart Inference Service
+            </Button>
+          </Popconfirm>
+        </Space>
+      </Form.Item>
+    </Form>
   );
 }

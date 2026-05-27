@@ -1,7 +1,7 @@
 {
-  "name": "local-ai-server-control-panel-frontend",
-  "version": "0.1.0",
-  "description": "Frontend for Local AI Server Control Panel",
+  "name": "private-ai-ops-dashboard-frontend",
+  "version": "2.0.0",
+  "description": "Frontend for Private AI Ops Dashboard",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -9,9 +9,15 @@
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
+    "@ant-design/icons": "^6.2.3",
     "@vitejs/plugin-react": "^4.3.1",
+    "@xyflow/react": "^12.10.2",
+    "antd": "^6.4.3",
+    "apexcharts": "^5.13.0",
+    "dayjs": "^1.11.21",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
+    "react-apexcharts": "^2.1.0",
     "react-dom": "^18.3.1",
     "vite": "^5.4.0"
   },

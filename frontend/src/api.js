@@ -73,7 +73,12 @@ export const authApi = {
     signal
   }),
   logout: (signal) => api('/auth/logout', { method: 'POST', signal }),
-  me: (signal) => api('/auth/me', { signal })
+  me: (signal) => api('/auth/me', { signal }),
+  changePassword: (currentPassword, newPassword, signal) => api('/auth/change-password', {
+    method: 'PUT',
+    body: JSON.stringify({ currentPassword, newPassword }),
+    signal
+  })
 };
 
 export const systemApi = {
@@ -83,6 +88,52 @@ export const systemApi = {
 
 export const dashboardApi = {
   summary: (signal) => api('/dashboard/summary', { signal })
+};
+
+export const topologyApi = {
+  get: (signal) => api('/topology', { signal }),
+  node: (id, signal) => api(`/topology/nodes/${id}`, { signal })
+};
+
+export const wizardApi = {
+  validateCompose: (projectId, signal) => api('/deployment/wizard/validate-compose', {
+    method: 'POST',
+    body: JSON.stringify({ projectId }),
+    signal
+  }),
+  validateEnv: (projectId, requiredVars = [], signal) => api('/deployment/wizard/validate-env', {
+    method: 'POST',
+    body: JSON.stringify({ projectId, requiredVars }),
+    signal
+  }),
+  checkPort: (projectId, signal) => api('/deployment/wizard/check-port', {
+    method: 'POST',
+    body: JSON.stringify({ projectId }),
+    signal
+  }),
+  run: (projectId, signal) => api('/deployment/wizard/run', {
+    method: 'POST',
+    body: JSON.stringify({ projectId }),
+    signal
+  })
+};
+
+export const inferenceApi = {
+  test: (formData, signal) => api('/ai/inference/test', {
+    method: 'POST',
+    body: formData,
+    signal
+  }),
+  restartService: (signal) => api('/ai/inference/restart-service', {
+    method: 'POST',
+    signal
+  }),
+  history: ({ limit = 50, offset = 0, modelId } = {}, signal) => {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (modelId) params.append('modelId', String(modelId));
+    return api(`/ai/inference/history?${params.toString()}`, { signal });
+  },
+  detail: (id, signal) => api(`/ai/inference/history/${id}`, { signal })
 };
 
 export const dockerApi = {
@@ -113,6 +164,11 @@ export const aiApi = {
   }),
   activateModel: (id, signal) => api(`/ai/models/${id}/activate`, { method: 'POST', signal }),
   deleteModel: (id, signal) => api(`/ai/models/${id}`, { method: 'DELETE', signal }),
+  updateModelMetadata: (id, payload, signal) => api(`/ai/models/${id}/metadata`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+    signal
+  }),
   testInference: (payload = {}, signal) => api('/ai/test-inference', {
     method: 'POST',
     body: JSON.stringify(payload),
@@ -128,4 +184,42 @@ export const auditApi = {
     if (to) params.append('to', to);
     return api(`/audit?${params.toString()}`, { signal });
   }
+};
+
+export const backupApi = {
+  meta: (signal) => api('/backups/meta', { signal }),
+  list: ({ limit = 50, offset = 0 } = {}, signal) => {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    return api(`/backups?${params.toString()}`, { signal });
+  },
+  detail: (id, signal) => api(`/backups/${id}`, { signal }),
+  create: (payload = {}, signal) => api('/backups', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    signal
+  }),
+  remove: (id, signal) => api(`/backups/${id}`, { method: 'DELETE', signal }),
+  restore: (id, signal) => api(`/backups/${id}/restore`, { method: 'POST', signal }),
+  downloadUrl: (id) => `/api/backups/${id}/download`
+};
+
+export const usersApi = {
+  list: (signal) => api('/users', { signal }),
+  detail: (id, signal) => api(`/users/${id}`, { signal }),
+  create: (payload, signal) => api('/users', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    signal
+  }),
+  update: (id, payload, signal) => api(`/users/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+    signal
+  }),
+  resetPassword: (id, password, signal) => api(`/users/${id}/password`, {
+    method: 'PUT',
+    body: JSON.stringify({ password }),
+    signal
+  }),
+  remove: (id, signal) => api(`/users/${id}`, { method: 'DELETE', signal })
 };

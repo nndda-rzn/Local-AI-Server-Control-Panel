@@ -1,13 +1,18 @@
-import { memo, useCallback, useState } from 'react';
-import { RefreshCcw } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { Card, Table, Tag, Button, Space, Select, DatePicker, Typography } from 'antd';
+import { ReloadOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import PageHeader from '../components/PageHeader.jsx';
-import { ErrorAlert, Spinner } from '../components/Feedback.jsx';
+import { ErrorAlert } from '../components/Feedback.jsx';
 import { auditApi } from '../api.js';
 import { useApi } from '../hooks/useApi.js';
 import { formatDateTime } from '../utils/format.js';
 
+const { Text } = Typography;
+const { RangePicker } = DatePicker;
+
 const FILTERS = [
-  { value: '', label: 'Semua' },
+  { value: '', label: 'Semua aksi' },
   { value: 'auth.login', label: 'Login' },
   { value: 'auth.logout', label: 'Logout' },
   { value: 'container.restart', label: 'Container Restart' },
@@ -22,116 +27,110 @@ const FILTERS = [
   { value: 'ai.model.delete', label: 'Model Delete' }
 ];
 
-const AuditRow = memo(function AuditRow({ item }) {
-  return (
-    <tr>
-      <td className="mono text-xs">{formatDateTime(item.timestamp)}</td>
-      <td className="text-sm">{item.actor_name || '-'}</td>
-      <td className="mono text-xs">{item.action}</td>
-      <td className="mono text-xs text-ink-muted">{item.target || '-'}</td>
-      <td>
-        <span className={item.status === 'success' ? 'pill-success' : 'pill-danger'}>
-          {item.status}
-        </span>
-      </td>
-      <td className="mono text-xs text-ink-muted">{item.ip_address || '-'}</td>
-      <td className="text-xs text-ink-muted max-w-[360px] break-words">{item.detail || '-'}</td>
-    </tr>
-  );
-});
-
 export default function AuditLog() {
   const [filter, setFilter] = useState('');
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
+  const [range, setRange] = useState(null);
 
   const fetcher = useCallback(
     (signal) => auditApi.list({
       limit: 200,
       action: filter || undefined,
-      from: from || undefined,
-      to: to || undefined
+      from: range?.[0] ? range[0].startOf('day').toISOString() : undefined,
+      to: range?.[1] ? range[1].endOf('day').toISOString() : undefined
     }, signal),
-    [filter, from, to]
+    [filter, range]
   );
 
-  const { data, error, loading, refresh } = useApi(fetcher, [filter, from, to]);
-
+  const { data, error, loading, refresh } = useApi(fetcher, [filter, range]);
   const items = data?.items || [];
   const total = data?.total ?? 0;
 
+  const columns = [
+    {
+      title: 'Time',
+      dataIndex: 'timestamp',
+      key: 'timestamp',
+      width: 170,
+      render: (v) => <Text type="secondary" className="mono" style={{ fontSize: 12 }}>{formatDateTime(v)}</Text>
+    },
+    { title: 'Actor', dataIndex: 'actor_name', key: 'actor', width: 120, render: (v) => v || '-' },
+    {
+      title: 'Action',
+      dataIndex: 'action',
+      key: 'action',
+      width: 180,
+      render: (v) => <span className="mono" style={{ fontSize: 12 }}>{v}</span>
+    },
+    {
+      title: 'Target',
+      dataIndex: 'target',
+      key: 'target',
+      ellipsis: true,
+      render: (v) => <span className="mono" style={{ fontSize: 12 }}>{v || '-'}</span>
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      width: 100,
+      render: (s) => <Tag color={s === 'success' ? 'success' : 'error'}>{s}</Tag>
+    },
+    {
+      title: 'IP',
+      dataIndex: 'ip_address',
+      key: 'ip',
+      width: 130,
+      responsive: ['lg'],
+      render: (v) => <span className="mono" style={{ fontSize: 12 }}>{v || '-'}</span>
+    },
+    {
+      title: 'Detail',
+      dataIndex: 'detail',
+      key: 'detail',
+      ellipsis: true,
+      responsive: ['xl'],
+      render: (v) => <Text type="secondary" style={{ fontSize: 12 }}>{v || '-'}</Text>
+    }
+  ];
+
   return (
-    <div className="grid gap-5">
+    <>
       <PageHeader
         eyebrow="Security"
         title="Audit Log"
         description={`${total} entri tercatat. Menampilkan 200 terbaru.`}
         actions={
-          <div className="flex flex-wrap gap-2.5 items-center">
-            <label className="sr-only" htmlFor="audit-filter">Filter aksi</label>
-            <select
-              id="audit-filter"
+          <Space wrap>
+            <Select
               value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="field !w-auto min-w-[180px]"
-            >
-              {FILTERS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-            <label className="sr-only" htmlFor="audit-from">Dari tanggal</label>
-            <input
-              id="audit-from"
-              type="date"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-              className="field !w-auto"
-              aria-label="Dari tanggal"
+              onChange={setFilter}
+              options={FILTERS}
+              style={{ minWidth: 180 }}
+              aria-label="Filter aksi"
             />
-            <label className="sr-only" htmlFor="audit-to">Sampai tanggal</label>
-            <input
-              id="audit-to"
-              type="date"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-              className="field !w-auto"
-              aria-label="Sampai tanggal"
+            <RangePicker
+              value={range}
+              onChange={setRange}
+              format="DD MMM YYYY"
+              allowClear
             />
-            <button type="button" className="btn-secondary" onClick={refresh} disabled={loading}>
-              {loading ? <Spinner /> : <RefreshCcw size={15} aria-hidden="true" />}
-              Refresh
-            </button>
-          </div>
+            <Button icon={<ReloadOutlined />} onClick={refresh} loading={loading}>Refresh</Button>
+          </Space>
         }
       />
 
       <ErrorAlert error={error} onRetry={refresh} />
 
-      <section className="card !p-0 overflow-hidden">
-        <div className="overflow-auto">
-          <table className="table-base min-w-[920px]">
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Actor</th>
-                <th>Action</th>
-                <th>Target</th>
-                <th>Status</th>
-                <th>IP</th>
-                <th>Detail</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <AuditRow key={item.id} item={item} />
-              ))}
-              {items.length === 0 && !loading && (
-                <tr><td colSpan={7} className="text-center py-7 text-ink-muted">Belum ada audit log.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
+      <Card bodyStyle={{ padding: 0 }}>
+        <Table
+          rowKey="id"
+          columns={columns}
+          dataSource={items}
+          loading={loading}
+          pagination={{ pageSize: 15 }}
+          scroll={{ x: 'max-content' }}
+        />
+      </Card>
+    </>
   );
 }

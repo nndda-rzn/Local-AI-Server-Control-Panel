@@ -69,7 +69,21 @@ export function activateModel(modelId) {
   return getSettings();
 }
 
-export function registerUploadedModel({ originalName, storedFilename, sizeBytes, framework, version }) {
+const ALLOWED_TASK_TYPES = new Set(['detection', 'classification', 'segmentation', 'tabular', 'other']);
+
+export function registerUploadedModel({
+  originalName,
+  storedFilename,
+  sizeBytes,
+  framework,
+  version,
+  taskType,
+  metrics,
+  classLabels,
+  inputSize,
+  datasetSource,
+  notes
+}) {
   const db = getDb();
   const root = getAllowedModelRoot();
   const filePath = path.join(root, storedFilename);
@@ -77,13 +91,79 @@ export function registerUploadedModel({ originalName, storedFilename, sizeBytes,
 
   const fw = ALLOWED_FRAMEWORKS.has(framework) ? framework : inferFramework(storedFilename);
   const safeVersion = typeof version === 'string' && version.length < 100 ? version : null;
+  const safeTaskType = ALLOWED_TASK_TYPES.has(taskType) ? taskType : null;
+  const safeNotes = typeof notes === 'string' && notes.length < 2000 ? notes : null;
+  const safeDataset = typeof datasetSource === 'string' && datasetSource.length < 500 ? datasetSource : null;
+  const safeInputSize = Number.isFinite(Number(inputSize)) ? parseInt(inputSize, 10) : null;
+
+  const metricsJson = metrics ? safeStringify(metrics) : null;
+  const labelsJson = classLabels ? safeStringify(classLabels) : null;
 
   const result = db.prepare(`
-    INSERT INTO ai_models (name, version, file_path, framework, size_bytes, is_active)
-    VALUES (?, ?, ?, ?, ?, 0)
-  `).run(originalName, safeVersion, filePath, fw, sizeBytes);
+    INSERT INTO ai_models (
+      name, version, file_path, framework, task_type, size_bytes,
+      metrics_json, class_labels_json, input_size, dataset_source, notes, is_active
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+  `).run(
+    originalName, safeVersion, filePath, fw, safeTaskType, sizeBytes,
+    metricsJson, labelsJson, safeInputSize, safeDataset, safeNotes
+  );
 
   return getModelById(result.lastInsertRowid);
+}
+
+export function updateModelMetadata(modelId, patch = {}) {
+  const db = getDb();
+  const model = getModelById(modelId);
+  if (!model) {
+    const error = new Error('Model not found');
+    error.status = 404;
+    throw error;
+  }
+
+  const fields = [];
+  const values = [];
+
+  if (patch.taskType !== undefined) {
+    const v = ALLOWED_TASK_TYPES.has(patch.taskType) ? patch.taskType : null;
+    fields.push('task_type = ?'); values.push(v);
+  }
+  if (patch.metrics !== undefined) {
+    fields.push('metrics_json = ?'); values.push(patch.metrics ? safeStringify(patch.metrics) : null);
+  }
+  if (patch.classLabels !== undefined) {
+    fields.push('class_labels_json = ?'); values.push(patch.classLabels ? safeStringify(patch.classLabels) : null);
+  }
+  if (patch.inputSize !== undefined) {
+    fields.push('input_size = ?'); values.push(Number.isFinite(Number(patch.inputSize)) ? parseInt(patch.inputSize, 10) : null);
+  }
+  if (patch.datasetSource !== undefined) {
+    fields.push('dataset_source = ?'); values.push(typeof patch.datasetSource === 'string' ? patch.datasetSource.slice(0, 500) : null);
+  }
+  if (patch.notes !== undefined) {
+    fields.push('notes = ?'); values.push(typeof patch.notes === 'string' ? patch.notes.slice(0, 2000) : null);
+  }
+  if (patch.version !== undefined) {
+    fields.push('version = ?'); values.push(typeof patch.version === 'string' ? patch.version.slice(0, 100) : null);
+  }
+
+  if (fields.length === 0) return model;
+
+  values.push(modelId);
+  db.prepare(`UPDATE ai_models SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+  return getModelById(modelId);
+}
+
+function safeStringify(value) {
+  try {
+    if (typeof value === 'string') {
+      JSON.parse(value);
+      return value;
+    }
+    return JSON.stringify(value);
+  } catch {
+    return null;
+  }
 }
 
 export function deleteModel(modelId) {

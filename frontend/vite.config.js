@@ -16,6 +16,17 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: false
+    sourcemap: false,
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'antd-vendor': ['antd', '@ant-design/icons'],
+          'chart-vendor': ['apexcharts', 'react-apexcharts'],
+          'date-vendor': ['dayjs']
+        }
+      }
+    }
   }
 });
