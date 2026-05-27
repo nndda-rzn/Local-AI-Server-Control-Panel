@@ -4,7 +4,7 @@
 
 # Private AI Ops Dashboard
 
-**Self-hosted control panel untuk server lokal berbasis Docker, AI inference, dan Cloudflare Tunnel.**
+**A self-hosted control panel for managing local Docker servers, AI inference services, and Cloudflare Tunnel deployments.**
 
 [![Version](https://img.shields.io/badge/version-2.0.0-0E9F6E?style=flat-square)](#)
 [![License](https://img.shields.io/badge/license-Private-64748B?style=flat-square)](#)
@@ -23,65 +23,65 @@
 
 ---
 
-## Ringkasan
+## Overview
 
-Platform admin web untuk mengelola **deployment, container Docker, model AI, monitoring, backup, dan keamanan** pada server lokal pribadi. Dirancang untuk kebutuhan operasional single-admin dengan fokus pada kemudahan, keamanan, dan transparansi audit.
+A web-based admin platform for managing **deployments, Docker containers, AI models, monitoring, backups, and security** on a private local server. Designed for single-administrator operational needs with a focus on simplicity, security, and audit transparency.
 
-Sesuai PRD v2.0, panel ini mengelola siklus penuh: **dashboard kesehatan server → kontrol container → deploy compose project → upload & aktifkan model AI → uji inference → backup otomatis → notifikasi saat down**.
+Built to PRD v2.0 specifications, the panel covers the full operational lifecycle: **server health dashboard → container control → compose project deployment → AI model upload and activation → inference testing → automated backup → notification on service downtime**.
 
-> Tidak menggantikan Portainer/Coolify secara penuh. Fokus pada stack pribadi: web demo, backend API, database, dan model AI ringan (YOLOv8 / ONNX / PyTorch / scikit-learn).
+> Not a full replacement for Portainer or Coolify. Focused on private stacks: web demos, backend APIs, databases, and lightweight AI models (YOLOv8 / ONNX / PyTorch / scikit-learn).
 
 ---
 
-## Fitur Utama
+## Key Features
 
-| Modul | Fitur |
+| Module | Capabilities |
 |---|---|
-| **Auth** | Login username/email, JWT 8 jam, rate limit 10x/15 menit, change password |
-| **Dashboard** | CPU / RAM / Disk gauge, uptime, IP, Docker info, Cloudflared status, health check HTTP |
-| **Topology** | Visualisasi service graph interaktif (React Flow), klik node untuk detail |
-| **Containers** | List, start/stop/restart, log viewer, filter by project/state, search, container-prefix whitelist |
+| **Authentication** | Username or email login, 8-hour JWT, 10 attempts per 15 minutes rate limit, password change |
+| **Dashboard** | CPU / RAM / Disk gauges, uptime, IP, Docker info, Cloudflared status, HTTP health checks |
+| **Topology** | Interactive service graph visualization (React Flow), click nodes for details |
+| **Containers** | List, start/stop/restart, log viewer, filter by project/state, search, prefix whitelist |
 | **Projects** | Auto-scan `ALLOWED_PROJECT_ROOT`, deploy/down/restart compose, deployment history |
-| **Deploy Wizard** | 5 step: pilih project → validate compose → check `.env` → check port conflict → deploy |
-| **AI Models** | Upload `.pt/.pth/.onnx/.pkl` (max 500 MB), aktivasi model, edit metadata, hapus |
+| **Deploy Wizard** | 5 steps: select project → validate compose → check `.env` → check port conflicts → deploy |
+| **AI Models** | Upload `.pt/.pth/.onnx/.pkl` (max 500 MB), model activation, metadata editing, deletion |
 | **AI Settings** | Confidence threshold, image size, device, CAM method, restart inference service |
-| **Inference** | Upload gambar → POST ke service inference → tampil hasil + history |
-| **Audit Log** | Catat semua aksi penting dengan filter aksi & rentang tanggal |
-| **Backups** | Manual `.tar.gz` per scope (db / models / uploads / projects), restore non-destruktif, scheduler cron |
-| **Notifications** | Telegram + Discord + generic webhook, watchdog container down/unhealthy |
-| **Users** | RBAC owner/admin/viewer, create/edit/disable/reset-password (owner only) |
-| **Settings** | Profile, change password, env config readonly |
+| **Inference** | Image upload → POST to inference service → display results and history |
+| **Audit Log** | Records all critical actions with action type and date range filters |
+| **Backups** | Manual `.tar.gz` per scope (db / models / uploads / projects), non-destructive restore, cron scheduler |
+| **Notifications** | Telegram, Discord, and generic webhook channels; container down/unhealthy watchdog |
+| **Users** | RBAC with owner/admin/viewer roles, create/edit/disable/reset password (owner only) |
+| **Settings** | Profile, password change, read-only environment configuration |
 
 ---
 
 ## Tech Stack
 
 **Backend**
-- Node.js 20 + Express 4 (ESM)
-- `dockerode` untuk Docker socket access
-- `node:sqlite` (built-in) dengan WAL mode
-- `bcryptjs` + `jsonwebtoken` untuk auth
-- `multer` untuk upload (model & inference image)
-- `node-cron` untuk scheduler
-- `systeminformation` untuk metrics
-- `js-yaml` untuk parsing compose
+- Node.js 20 with Express 4 (ESM)
+- `dockerode` for Docker socket access
+- `node:sqlite` (built-in) with WAL mode
+- `bcryptjs` and `jsonwebtoken` for authentication
+- `multer` for uploads (models and inference images)
+- `node-cron` for scheduling
+- `systeminformation` for system metrics
+- `js-yaml` for compose file parsing
 
 **Frontend**
-- React 18 + Vite 5
-- Ant Design 6 sebagai UI library
-- ApexCharts untuk gauge & chart
-- React Flow (`@xyflow/react`) untuk topology graph
-- Tailwind CSS untuk utility classes
-- Day.js untuk format tanggal
+- React 18 with Vite 5
+- Ant Design 6 as the UI library
+- ApexCharts for gauges and charts
+- React Flow (`@xyflow/react`) for the topology graph
+- Tailwind CSS for utility classes
+- Day.js for date formatting
 
 **Infrastructure**
-- Docker Compose (panel-frontend + panel-backend)
-- Nginx sebagai reverse proxy frontend
-- Cloudflare Tunnel untuk akses publik (opsional)
+- Docker Compose (panel-frontend and panel-backend)
+- Nginx as the frontend reverse proxy
+- Cloudflare Tunnel for public access (optional)
 
 ---
 
-## Arsitektur
+## Architecture
 
 ```
                           ┌────────────────────┐
@@ -89,7 +89,7 @@ Sesuai PRD v2.0, panel ini mengelola siklus penuh: **dashboard kesehatan server 
                           └──────────┬─────────┘
                                      │ HTTPS
                           ┌──────────▼─────────┐
-                          │ Cloudflare Tunnel  │ (opsional)
+                          │ Cloudflare Tunnel  │ (optional)
                           └──────────┬─────────┘
                                      │
                           ┌──────────▼─────────┐
@@ -128,14 +128,14 @@ Sesuai PRD v2.0, panel ini mengelola siklus penuh: **dashboard kesehatan server 
 
 ## Quick Start
 
-### Prasyarat
+### Prerequisites
 
-- Ubuntu Server (atau Linux modern apa pun)
-- Docker Engine + Docker Compose plugin
-- Folder `/server/{apps,data,backup}` (akan dibuat otomatis kalau belum ada)
-- Node.js 20+ (hanya untuk mode development)
+- Ubuntu Server (or any modern Linux distribution)
+- Docker Engine with Docker Compose plugin
+- The folders `/server/{apps,data,backup}` (created automatically if missing)
+- Node.js 20+ (development mode only)
 
-### 1. Clone & Configure
+### 1. Clone and Configure
 
 ```bash
 git clone <repo-url> private-ai-ops-dashboard
@@ -144,36 +144,36 @@ cp .env.example .env
 nano .env
 ```
 
-Wajib diganti:
+You must override at least:
 
 ```env
-JWT_SECRET=isi-dengan-random-panjang-dan-acak
+JWT_SECRET=replace-with-a-long-random-string
 ADMIN_USERNAME=admin
-ADMIN_PASSWORD=password-kuat-anda
+ADMIN_PASSWORD=your-strong-password
 ```
 
 ### 2. Production (Docker Compose)
 
 ```bash
-npm run docker:up         # build + start
+npm run docker:up         # build and start
 npm run docker:logs       # tail logs
-npm run docker:ps         # status container
-npm run docker:down       # stop semua
+npm run docker:ps         # container status
+npm run docker:down       # stop everything
 npm run docker:rebuild    # rebuild from scratch
 ```
 
-Buka panel di **`http://IP-SERVER:3000`**.
+Open the panel at **`http://SERVER-IP:3000`**.
 
-### 3. Development (tanpa Docker)
+### 3. Development (without Docker)
 
 ```bash
 npm install
-npm run install:all       # install backend + frontend deps
+npm run install:all       # install backend and frontend dependencies
 
-# jalankan keduanya bersamaan
+# run both concurrently
 npm run dev
 
-# atau terpisah
+# or run them separately
 npm run dev:be            # backend → http://localhost:5500
 npm run dev:fe            # frontend → http://localhost:5174
 ```
@@ -181,20 +181,20 @@ npm run dev:fe            # frontend → http://localhost:5174
 
 ---
 
-## Konfigurasi `.env` Lengkap
+## Complete `.env` Configuration
 
 ```env
 # Core
 NODE_ENV=development
 PORT=5500
-JWT_SECRET=ganti-dengan-random-panjang
+JWT_SECRET=replace-with-a-long-random-string
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=admin123
 
 # Database
 DATABASE_PATH=/server/data/sqlite/panel.db
 
-# Whitelists & Limits
+# Whitelists and limits
 ALLOWED_PROJECT_ROOT=/server/apps
 ALLOWED_MODEL_ROOT=/server/data/models
 ALLOWED_CONTAINER_PREFIXES=panel-,nginx-test,cdss-,ai-,postgres,redis
@@ -202,33 +202,33 @@ LOG_TAIL_LIMIT=200
 MAX_MODEL_UPLOAD_MB=500
 MAX_INFERENCE_UPLOAD_MB=20
 
-# Health Check (format: name|url,name2|url2)
+# Health check (format: name|url,name2|url2)
 HEALTH_CHECK_TARGETS=
 
-# AI Inference
+# AI inference
 AI_INFERENCE_URL=
 AI_INFERENCE_CONTAINER=ai-inference
 
-# Backup Scheduler (cron 5-field, kosong = disable)
+# Backup scheduler (5-field cron, empty = disabled)
 BACKUP_SCHEDULE_CRON=
 BACKUP_SCHEDULE_SCOPES=db,models
 BACKUP_SCHEDULE_LABEL=auto
 BACKUP_SCHEDULE_TZ=Asia/Jakarta
 
-# Notifications (kosong = disable)
+# Notifications (empty = disabled)
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_CHAT_ID=
 DISCORD_WEBHOOK_URL=
 GENERIC_WEBHOOK_URL=
 
-# Watchdog Container
+# Container watchdog
 WATCHDOG_CRON=
 WATCHDOG_TARGETS=
 WATCHDOG_COOLDOWN_MS=900000
 WATCHDOG_TZ=Asia/Jakarta
 ```
 
-### Contoh setup scheduler harian + watchdog 2 menit + Telegram
+### Example: daily scheduler, 2-minute watchdog, Telegram alerts
 
 ```env
 BACKUP_SCHEDULE_CRON=0 2 * * *
@@ -243,14 +243,14 @@ TELEGRAM_CHAT_ID=-1001234567890
 
 ---
 
-## Setup di Ubuntu Server
+## Ubuntu Server Setup
 
 ```bash
-# Buat folder data
+# Create data folders
 sudo mkdir -p /server/apps /server/data/{sqlite,models,uploads,inference-results} /server/backup
 sudo chown -R $USER:$USER /server
 
-# Pindahkan project
+# Move the project
 sudo mv ./private-ai-ops-dashboard /server/apps/
 cd /server/apps/private-ai-ops-dashboard
 
@@ -258,32 +258,32 @@ cd /server/apps/private-ai-ops-dashboard
 cp .env.example .env
 nano .env
 
-# Build & jalankan
+# Build and run
 docker compose up -d --build
 docker ps
 ```
 
-Panel siap di `http://IP-SERVER:3000`.
+The panel will be available at `http://SERVER-IP:3000`.
 
 ---
 
 ## Cloudflare Tunnel
 
-| Hostname              | Target Lokal             | Boleh Public? |
+| Hostname              | Local Target             | Public-safe?  |
 | --------------------- | ------------------------ | ------------- |
-| panel.domain.com      | http://localhost:3000    | ✅ Admin (lindungi dengan Cloudflare Access) |
-| app.domain.com        | http://localhost:8081    | ✅ Web demo |
-| api.domain.com        | http://localhost:8000    | ✅ Backend API |
-| postgres / redis      | -                        | ❌ JANGAN dibuka |
-| `/var/run/docker.sock`| -                        | ❌ JANGAN dibuka |
+| panel.domain.com      | http://localhost:3000    | Yes (protect with Cloudflare Access) |
+| app.domain.com        | http://localhost:8081    | Yes (web demo) |
+| api.domain.com        | http://localhost:8000    | Yes (backend API) |
+| postgres / redis      | -                        | No, never expose |
+| `/var/run/docker.sock`| -                        | No, never expose |
 
-> Panel admin sebaiknya di belakang **Cloudflare Access** atau VPN, bukan terbuka publik dengan password saja.
+> The admin panel should sit behind **Cloudflare Access** or a VPN, not be exposed publicly with password authentication alone.
 
 ---
 
 ## API Reference
 
-### Auth
+### Authentication
 ```
 POST   /api/auth/login              { username|email, password }
 POST   /api/auth/logout
@@ -291,7 +291,7 @@ GET    /api/auth/me
 PUT    /api/auth/change-password    { currentPassword, newPassword }
 ```
 
-### System & Dashboard
+### System and Dashboard
 ```
 GET    /api/system/status
 GET    /api/system/health-check
@@ -323,7 +323,7 @@ POST   /api/deployment/wizard/check-port         { projectId }
 POST   /api/deployment/wizard/run                { projectId }
 ```
 
-### AI Models & Inference
+### AI Models and Inference
 ```
 GET    /api/ai/settings
 PUT    /api/ai/settings              { confidence_threshold, image_size, device, cam_method }
@@ -332,7 +332,7 @@ POST   /api/ai/models/upload         multipart: model + framework + version + ..
 PUT    /api/ai/models/:id/metadata
 POST   /api/ai/models/:id/activate
 DELETE /api/ai/models/:id
-POST   /api/ai/test-inference        { ... } (opsional, JSON ke AI_INFERENCE_URL)
+POST   /api/ai/test-inference        { ... }   (optional JSON to AI_INFERENCE_URL)
 
 POST   /api/ai/inference/test        multipart: image
 POST   /api/ai/inference/restart-service
@@ -347,7 +347,7 @@ GET    /api/backups?limit=50&offset=0
 GET    /api/backups/:id
 POST   /api/backups                  { scopes: [db|models|uploads|projects], label }
 GET    /api/backups/:id/download
-POST   /api/backups/:id/restore      (owner only, extract ke /server/backup/restored/)
+POST   /api/backups/:id/restore      (owner only, extracts to /server/backup/restored/)
 DELETE /api/backups/:id
 ```
 
@@ -368,23 +368,23 @@ GET    /api/audit?limit=200&action=&from=&to=
 
 ---
 
-## Keamanan
+## Security
 
-| Layer | Mekanisme |
+| Layer | Mechanism |
 |---|---|
-| **Authentication** | bcrypt hash password, JWT 8 jam, login rate limit 10x/15 menit |
-| **Authorization** | Role `owner` / `admin` / `viewer`, aksi destruktif owner/admin saja, user CRUD owner only |
-| **Docker socket** | Hanya backend container yang punya akses, diisolasi via volume mount |
-| **Command exec** | Whitelist compose action: `up -d`, `down`, `restart`, `ps`. Tidak ada terminal bebas |
-| **Path access** | Strict via `ensurePathAllowed`: project & model & backup hanya boleh di whitelist root |
-| **Upload** | Validasi ekstensi (`.pt/.pth/.onnx/.pkl`), size limit, safe-name regex |
-| **Container action** | Whitelist prefix di env, panel-* protected dari stop UI |
-| **Audit logging** | Setiap aksi penting: login, container, project, AI, model, backup, user CRUD |
-| **Backup restore** | Non-destruktif: extract ke folder timestamped, file aktif tidak ditimpa |
+| **Authentication** | bcrypt password hashing, 8-hour JWT, login rate limit 10 per 15 minutes |
+| **Authorization** | Roles `owner` / `admin` / `viewer`; destructive actions limited to owner/admin; user CRUD owner-only |
+| **Docker socket** | Only the backend container has access, isolated through volume mounts |
+| **Command execution** | Strict compose action whitelist: `up -d`, `down`, `restart`, `ps`. No free-form shell |
+| **Path access** | Strict `ensurePathAllowed` checks; project, model, and backup operations restricted to whitelisted roots |
+| **Uploads** | Extension validation (`.pt/.pth/.onnx/.pkl`), size limits, safe-name regex |
+| **Container actions** | Prefix whitelist via env; `panel-*` containers protected from UI stop |
+| **Audit logging** | Every critical action: login, container, project, AI, model, backup, user CRUD |
+| **Backup restore** | Non-destructive: extracts to a timestamped folder; live files are never overwritten |
 
 ---
 
-## Struktur Folder
+## Project Structure
 
 ```
 private-ai-ops-dashboard/
@@ -392,8 +392,8 @@ private-ai-ops-dashboard/
 │   ├── Dockerfile
 │   ├── package.json
 │   └── src/
-│       ├── server.js                # entry point + bootstrap
-│       ├── db/index.js              # SQLite schema + migrations
+│       ├── server.js                # entry point and bootstrap
+│       ├── db/index.js              # SQLite schema and migrations
 │       ├── middleware/
 │       │   └── auth.middleware.js   # requireAuth, requireRole
 │       ├── routes/
@@ -471,124 +471,124 @@ private-ai-ops-dashboard/
 
 ## Scripts
 
-| Command | Deskripsi |
+| Command | Description |
 |---|---|
 | `npm install` | Install root dev dependencies (concurrently) |
-| `npm run install:all` | Install backend + frontend dependencies |
-| `npm run dev` | Jalankan backend & frontend bersamaan (concurrently) |
+| `npm run install:all` | Install backend and frontend dependencies |
+| `npm run dev` | Run backend and frontend concurrently |
 | `npm run dev:be` | Backend only (port 5500, watch mode) |
 | `npm run dev:fe` | Frontend only (port 5174, Vite HMR) |
-| `npm run start:be` | Backend mode production |
-| `npm run build:fe` | Build frontend production |
-| `npm run preview:fe` | Preview hasil build |
-| `npm run seed` | Seed admin user dari `.env` |
-| `npm run docker:up` | Build + start panel containers |
-| `npm run docker:down` | Stop semua container |
-| `npm run docker:logs` | Tail logs |
-| `npm run docker:ps` | Status container |
-| `npm run docker:rebuild` | Rebuild dari awal (no-cache) |
+| `npm run start:be` | Backend in production mode |
+| `npm run build:fe` | Build the frontend for production |
+| `npm run preview:fe` | Preview the production build |
+| `npm run seed` | Seed the admin user from `.env` |
+| `npm run docker:up` | Build and start panel containers |
+| `npm run docker:down` | Stop all containers |
+| `npm run docker:logs` | Tail container logs |
+| `npm run docker:ps` | Show container status |
+| `npm run docker:rebuild` | Rebuild from scratch (no cache) |
 
 ---
 
-## Acceptance Criteria PRD v2.0
+## PRD v2.0 Acceptance Criteria
 
-| ID | Kriteria | Status |
-|----|----------|--------|
-| AC-001 | Admin dapat login dan logout | ✅ |
-| AC-002 | Dashboard menampilkan CPU/RAM/disk/uptime | ✅ |
-| AC-003 | Daftar container tampil lengkap | ✅ |
-| AC-004 | Admin dapat restart container Nginx test | ✅ |
-| AC-005 | Log Nginx dapat dibaca dari UI | ✅ |
-| AC-006 | Project dengan compose file dapat dideploy dari UI | ✅ |
-| AC-007 | Perubahan AI settings tersimpan | ✅ |
-| AC-008 | Audit log mencatat restart/deploy/settings update | ✅ |
-| AC-009 | Panel dapat dibuka melalui Cloudflare Tunnel | ⚠️ tergantung deployment |
-| AC-010 | Endpoint tanpa token tidak dapat akses API admin | ✅ |
+| ID | Criterion | Status |
+|----|-----------|--------|
+| AC-001 | Admin can log in and log out | Done |
+| AC-002 | Dashboard displays CPU, RAM, disk, and uptime | Done |
+| AC-003 | Container list is complete | Done |
+| AC-004 | Admin can restart the Nginx test container | Done |
+| AC-005 | Nginx logs are readable from the UI | Done |
+| AC-006 | Projects with compose files can be deployed from the UI | Done |
+| AC-007 | AI settings persist after save | Done |
+| AC-008 | Audit log records restart, deploy, and settings updates | Done |
+| AC-009 | Panel is reachable through Cloudflare Tunnel | Deployment-dependent |
+| AC-010 | API admin endpoints reject requests without a token | Done |
 
 ---
 
 ## Roadmap
 
-### ✅ Selesai (MVP + V1.1 + V1.2)
-- Login (username/email), JWT, change password
-- Dashboard server + Docker + health check
-- Container manager + log viewer + filter
-- Project manager + deployment wizard
-- AI model upload/activate/delete + settings
-- Inference test + history
-- Audit log + filter
-- Backup manual + restore + scheduler cron
-- Notification (Telegram/Discord/Webhook) + watchdog
-- RBAC user management (owner/admin/viewer)
+### Completed (MVP + V1.1 + V1.2)
+- Login (username or email), JWT, password change
+- Server, Docker, and health-check dashboard
+- Container manager with log viewer and filters
+- Project manager with deployment wizard
+- AI model upload, activation, deletion, and settings
+- Inference test with history
+- Audit log with filtering
+- Manual backup, restore, and cron scheduler
+- Notifications (Telegram, Discord, webhook) and watchdog
+- RBAC user management (owner, admin, viewer)
 - Service topology graph
 
-### 🚧 Future Scope
-- Git-based deployment dari GitHub/GitLab
+### Future Scope
+- Git-based deployment from GitHub or GitLab
 - Cloudflare Tunnel route manager via API
-- Restore backup destruktif (overwrite file aktif)
-- Model registry dengan history version antar-model
-- Test webhook button (verify Telegram/Discord config)
+- Destructive backup restore (overwrite live files)
+- Model registry with version history across models
+- Test webhook button (verify Telegram and Discord configuration)
 - 2FA / TOTP login
 
 ---
 
-## Risiko & Mitigasi
+## Risks and Mitigations
 
-| Risiko | Mitigasi |
-|--------|----------|
-| Docker socket terlalu powerful | Endpoint ketat, auth wajib, whitelist prefix container |
-| Command injection | Tidak ada terminal bebas, semua command lewat whitelist |
-| Panel admin terekspos publik | Cloudflare Access, rate limit, password kuat |
-| VM mati saat host shutdown | Auto-start VM, monitoring uptime, backup ke VPS |
-| Model AI terlalu berat | Limit upload size, default device CPU, model registry ringan |
-| Storage penuh | Backup rotation manual, audit log retention 90 hari |
+| Risk | Mitigation |
+|------|-----------|
+| Docker socket is highly privileged | Strict endpoints, mandatory authentication, container prefix whitelist |
+| Command injection | No free-form shell, all commands run through whitelist |
+| Admin panel exposed publicly | Cloudflare Access, rate limiting, strong passwords |
+| VM shuts down with the host | Auto-start VMs, uptime monitoring, off-site backups |
+| AI model is too heavy | Upload size limits, default CPU device, lightweight model registry |
+| Storage exhaustion | Manual backup rotation, 90-day audit log retention |
 
 ---
 
 ## Troubleshooting
 
-**Backend tidak bisa connect ke Docker socket**
+**Backend cannot connect to the Docker socket**
 ```bash
-# Pastikan user dalam group docker
+# Make sure your user is in the docker group
 sudo usermod -aG docker $USER
-# Atau pastikan socket mount benar
+# Or verify the socket mount inside the container
 docker compose exec backend ls -la /var/run/docker.sock
 ```
 
-**Port 3000 sudah dipakai**
+**Port 3000 is already in use**
 ```bash
-# Edit docker-compose.yml, ganti port mapping
+# Edit docker-compose.yml and change the port mapping
 ports:
-  - "8080:80"   # ganti dari 3000:80
+  - "8080:80"   # changed from 3000:80
 ```
 
-**Backup gagal: tar not found**
+**Backup fails with "tar not found"**
 ```bash
-# Container backend butuh tar (default ada di node:20 image)
+# The backend container needs tar (included in the node:20 image by default)
 docker compose exec backend tar --version
 ```
 
-**Health check tidak muncul**
+**Health check section is empty**
 ```env
-# Set HEALTH_CHECK_TARGETS di .env
+# Set HEALTH_CHECK_TARGETS in .env
 HEALTH_CHECK_TARGETS=API|http://cdss-api:8000/health,Web|http://cdss-web:80
 ```
 
-**Notification tidak terkirim**
-- Cek log backend: `docker compose logs backend | grep notify`
-- Verify token Telegram & chat_id (kirim test message manual via curl)
-- Pastikan container backend punya akses internet keluar
+**Notifications are not delivered**
+- Check the backend logs: `docker compose logs backend | grep notify`
+- Verify the Telegram token and chat_id (send a test message manually with curl)
+- Make sure the backend container has outbound internet access
 
 ---
 
-## Lisensi
+## License
 
-Private project, tidak untuk distribusi publik.
+Private project. Not intended for public distribution.
 
 ---
 
 ## Credits
 
-Dibangun dengan ❤️ menggunakan **Node.js**, **React**, **Ant Design**, dan **Docker**.
+Built with Node.js, React, Ant Design, and Docker.
 
-Inspired by Portainer, Coolify, dan kebutuhan operasional lab AI lokal.
+Inspired by Portainer, Coolify, and the operational needs of a private AI lab.
