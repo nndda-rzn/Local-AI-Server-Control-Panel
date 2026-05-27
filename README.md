@@ -18,7 +18,7 @@
 </p>
 
 <p>
-  <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel/releases"><img src="https://img.shields.io/github/v/release/nndda-rzn/Local-AI-Server-Control-Panel?include_prereleases&display_name=tag&style=flat-square&labelColor=0F172A&color=0E9F6E&label=release" alt="Release" /></a>
+  <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel/blob/main/package.json"><img src="https://img.shields.io/badge/version-2.0.0-0E9F6E?style=flat-square&labelColor=0F172A" alt="Version" /></a>
   <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel/blob/main/README.md"><img src="https://img.shields.io/badge/license-Private-64748B?style=flat-square&labelColor=0F172A" alt="License" /></a>
   <a href="#roadmap"><img src="https://img.shields.io/badge/status-MVP%20%2B%20V1.2-16A34A?style=flat-square&labelColor=0F172A" alt="Status" /></a>
   <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel/blob/main/PRD_extracted.txt"><img src="https://img.shields.io/badge/PRD-v2.0%20✓-0EA5E9?style=flat-square&labelColor=0F172A" alt="PRD" /></a>
