@@ -1,23 +1,78 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/AI-Ops%20Dashboard-0E9F6E?style=for-the-badge&logo=docker&logoColor=white" alt="Logo" height="56" />
+<a href="#">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0E9F6E,100:16A34A&height=180&section=header&text=Private%20AI%20Ops%20Dashboard&fontSize=42&fontColor=ffffff&fontAlignY=38&desc=Self-hosted%20control%20panel%20for%20Docker%20%2B%20AI%20%2B%20Cloudflare%20Tunnel&descSize=14&descAlignY=60&descAlign=50" alt="Private AI Ops Dashboard" width="100%" />
+</a>
 
-# Private AI Ops Dashboard
+<p>
+  <em>A self-hosted control panel for managing local Docker servers, AI inference services, and Cloudflare Tunnel deployments.</em>
+</p>
 
-**A self-hosted control panel for managing local Docker servers, AI inference services, and Cloudflare Tunnel deployments.**
+<p>
+  <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel/stargazers"><img src="https://img.shields.io/github/stars/nndda-rzn/Local-AI-Server-Control-Panel?style=for-the-badge&logo=github&color=0E9F6E&labelColor=0F172A" alt="Stars" /></a>
+  <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel/network/members"><img src="https://img.shields.io/github/forks/nndda-rzn/Local-AI-Server-Control-Panel?style=for-the-badge&logo=github&color=16A34A&labelColor=0F172A" alt="Forks" /></a>
+  <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel/issues"><img src="https://img.shields.io/github/issues/nndda-rzn/Local-AI-Server-Control-Panel?style=for-the-badge&logo=github&color=F59E0B&labelColor=0F172A" alt="Issues" /></a>
+  <a href="https://github.com/nndda-rzn/Local-AI-Server-Control-Panel/commits/main"><img src="https://img.shields.io/github/last-commit/nndda-rzn/Local-AI-Server-Control-Panel?style=for-the-badge&logo=git&color=0EA5E9&labelColor=0F172A" alt="Last Commit" /></a>
+</p>
 
-[![Version](https://img.shields.io/badge/version-2.0.0-0E9F6E?style=flat-square)](#)
-[![License](https://img.shields.io/badge/license-Private-64748B?style=flat-square)](#)
-[![Status](https://img.shields.io/badge/status-MVP%20%2B%20V1.2-16A34A?style=flat-square)](#)
-[![Platform](https://img.shields.io/badge/platform-Ubuntu%20Server-E95420?style=flat-square&logo=ubuntu&logoColor=white)](#)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](#)
+<p>
+  <img src="https://img.shields.io/badge/version-2.0.0-0E9F6E?style=flat-square&labelColor=0F172A" alt="Version" />
+  <img src="https://img.shields.io/badge/license-Private-64748B?style=flat-square&labelColor=0F172A" alt="License" />
+  <img src="https://img.shields.io/badge/status-MVP%20%2B%20V1.2-16A34A?style=flat-square&labelColor=0F172A" alt="Status" />
+  <img src="https://img.shields.io/badge/PRD-v2.0%20✓-0EA5E9?style=flat-square&labelColor=0F172A" alt="PRD" />
+  <img src="https://img.shields.io/github/repo-size/nndda-rzn/Local-AI-Server-Control-Panel?style=flat-square&labelColor=0F172A&color=8B5CF6" alt="Repo Size" />
+  <img src="https://img.shields.io/github/languages/code-size/nndda-rzn/Local-AI-Server-Control-Panel?style=flat-square&labelColor=0F172A&color=EC4899" alt="Code Size" />
+</p>
 
-[![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?style=flat-square&logo=node.js&logoColor=white)](#)
-[![Express](https://img.shields.io/badge/Express-4.x-000000?style=flat-square&logo=express&logoColor=white)](#)
-[![SQLite](https://img.shields.io/badge/SQLite-WAL-003B57?style=flat-square&logo=sqlite&logoColor=white)](#)
-[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](#)
-[![Vite](https://img.shields.io/badge/Vite-5-646CFF?style=flat-square&logo=vite&logoColor=white)](#)
-[![Ant Design](https://img.shields.io/badge/Ant%20Design-6-0170FE?style=flat-square&logo=antdesign&logoColor=white)](#)
+<h4>Platform &amp; Infrastructure</h4>
+<p>
+  <img src="https://img.shields.io/badge/Ubuntu_Server-E95420?style=for-the-badge&logo=ubuntu&logoColor=white" alt="Ubuntu" />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white" alt="Nginx" />
+  <img src="https://img.shields.io/badge/Cloudflare-F38020?style=for-the-badge&logo=cloudflare&logoColor=white" alt="Cloudflare" />
+  <img src="https://img.shields.io/badge/VMware-607078?style=for-the-badge&logo=vmware&logoColor=white" alt="VMware" />
+</p>
+
+<h4>Backend</h4>
+<p>
+  <img src="https://img.shields.io/badge/Node.js_20+-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/Express_4-000000?style=for-the-badge&logo=express&logoColor=white" alt="Express" />
+  <img src="https://img.shields.io/badge/SQLite_WAL-003B57?style=for-the-badge&logo=sqlite&logoColor=white" alt="SQLite" />
+  <img src="https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white" alt="JWT" />
+  <img src="https://img.shields.io/badge/bcrypt-EE3424?style=for-the-badge&logo=keepassxc&logoColor=white" alt="bcrypt" />
+</p>
+
+<h4>Frontend</h4>
+<p>
+  <img src="https://img.shields.io/badge/React_18-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
+  <img src="https://img.shields.io/badge/Vite_5-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
+  <img src="https://img.shields.io/badge/Ant_Design_6-0170FE?style=for-the-badge&logo=antdesign&logoColor=white" alt="Ant Design" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind" />
+  <img src="https://img.shields.io/badge/React_Flow-FF0072?style=for-the-badge&logo=react&logoColor=white" alt="React Flow" />
+  <img src="https://img.shields.io/badge/ApexCharts-008FFB?style=for-the-badge&logo=apache-echarts&logoColor=white" alt="ApexCharts" />
+</p>
+
+<h4>AI &amp; Notifications</h4>
+<p>
+  <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white" alt="PyTorch" />
+  <img src="https://img.shields.io/badge/ONNX-005CED?style=for-the-badge&logo=onnx&logoColor=white" alt="ONNX" />
+  <img src="https://img.shields.io/badge/scikit--learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white" alt="scikit-learn" />
+  <img src="https://img.shields.io/badge/YOLOv8-00FFFF?style=for-the-badge&logo=yolo&logoColor=black" alt="YOLOv8" />
+  <img src="https://img.shields.io/badge/Telegram-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram" />
+  <img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord" />
+</p>
+
+<br />
+
+<p>
+  <a href="#overview">Overview</a> •
+  <a href="#key-features">Features</a> •
+  <a href="#architecture">Architecture</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#api-reference">API</a> •
+  <a href="#security">Security</a> •
+  <a href="#roadmap">Roadmap</a>
+</p>
 
 </div>
 
